@@ -9,6 +9,7 @@ import {
   serverTimestamp,
   setDoc,
   updateDoc,
+  where,
   writeBatch,
 } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
@@ -441,26 +442,28 @@ export async function listEducationalInstitutions(): Promise<EducationalInstitut
   try {
     const [snap, maps] = await Promise.all([
       getDocs(
-        query(collection(db, 'educational_institutions'), orderBy('created_at', 'desc'))
+        query(collection(db, 'educational_institutions'), where('is_verified', 'in', [true, false]))
       ),
       fetchLookupMaps(),
     ]);
-    return snap.docs.map((d) => {
-      const data = d.data();
-      const com = data.commune_id ? maps.communes.get(String(data.commune_id)) : null;
-      return {
-        id: d.id,
-        name: String(data.name || ''),
-        institution_code: data.institution_code ? String(data.institution_code) : null,
-        commune_id: data.commune_id ? String(data.commune_id) : null,
-        sector_id: data.sector_id ? String(data.sector_id) : null,
-        responsible_name: String(data.responsible_name || ''),
-        badge_level: data.badge_level as InstitutionBadge,
-        is_verified: Boolean(data.is_verified),
-        created_at: toIsoString(data.created_at),
-        communes: com ? { name: com.name } : null,
-      };
-    });
+    return snap.docs
+      .map((d) => {
+        const data = d.data();
+        const com = data.commune_id ? maps.communes.get(String(data.commune_id)) : null;
+        return {
+          id: d.id,
+          name: String(data.name || ''),
+          institution_code: data.institution_code ? String(data.institution_code) : null,
+          commune_id: data.commune_id ? String(data.commune_id) : null,
+          sector_id: data.sector_id ? String(data.sector_id) : null,
+          responsible_name: String(data.responsible_name || ''),
+          badge_level: data.badge_level as InstitutionBadge,
+          is_verified: Boolean(data.is_verified),
+          created_at: toIsoString(data.created_at),
+          communes: com ? { name: com.name } : null,
+        };
+      })
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   } catch (error) {
     handleFirestoreError(error, OperationType.LIST, 'educational_institutions');
   }

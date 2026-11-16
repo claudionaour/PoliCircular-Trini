@@ -24,7 +24,9 @@ export async function listActiveCommunes(): Promise<Commune[]> {
 
 export async function listAllCommunes(): Promise<Commune[]> {
   try {
-    const snap = await getDocs(collection(db, 'communes'));
+    const snap = await getDocs(
+      query(collection(db, 'communes'), where('is_active', 'in', [true, false]))
+    );
     if (snap.empty) {
       return SEED_COMMUNES.map((c) => mapCommuneDoc(c.id, c)).sort((a, b) =>
         a.name.localeCompare(b.name, 'es')
@@ -45,19 +47,25 @@ export async function listSectorsByCommune(
   if (!communeId) return [];
   try {
     const snap = await getDocs(
-      query(collection(db, 'sectors'), where('commune_id', '==', communeId))
+      query(
+        collection(db, 'sectors'),
+        activeOnly
+          ? where('is_active', '==', true)
+          : where('is_active', 'in', [true, false])
+      )
     );
-    if (snap.empty) {
+    const filtered = snap.docs
+      .map((d) => mapSectorDoc(d.id, d.data()))
+      .filter((s) => s.commune_id === communeId && (!activeOnly || s.is_active))
+      .sort((a, b) => a.name.localeCompare(b.name, 'es'));
+    if (filtered.length === 0 && snap.empty) {
       return SEED_SECTORS.filter(
         (s) => s.commune_id === communeId && (!activeOnly || s.is_active)
       )
         .map((s) => mapSectorDoc(s.id, s))
         .sort((a, b) => a.name.localeCompare(b.name, 'es'));
     }
-    return snap.docs
-      .map((d) => mapSectorDoc(d.id, d.data()))
-      .filter((s) => !activeOnly || s.is_active)
-      .sort((a, b) => a.name.localeCompare(b.name, 'es'));
+    return filtered;
   } catch (error) {
     handleFirestoreError(error, OperationType.LIST, 'sectors');
   }

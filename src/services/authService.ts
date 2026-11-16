@@ -37,7 +37,14 @@ import {
 import { mapProfileDoc } from './firestoreHelpers';
 import type { AccountType, PrivateContact, Profile, UserRole } from '../types/domain';
 
-const BOOTSTRAP_SUPER_ADMIN_EMAILS = new Set(['naourclaudio@gmail.com']);
+import { fileToCompactDataUrl } from '../utils/imageOptimizer';
+
+const BOOTSTRAP_SUPER_ADMIN_EMAILS = new Set([
+  'claudionaourlopez@gmail.com',
+  'naourclaudio@gmail.com',
+]);
+
+const bootstrapInFlight = new Map<string, Promise<void>>();
 
 export interface RegisterPayload {
   email: string;
@@ -226,16 +233,30 @@ export async function signInWithGoogle(): Promise<User> {
 }
 
 export async function ensureBootstrapProfile(firebaseUser: User): Promise<void> {
-  const userRef = doc(db, 'users', firebaseUser.uid);
-  const snap = await getDoc(userRef);
-  if (!snap.exists()) {
-    const emailPrefix = (firebaseUser.email || 'vecino').split('@')[0];
-    await initializeUserDocuments(firebaseUser, {
-      fullName: firebaseUser.displayName || emailPrefix,
-      username: `${emailPrefix}_${firebaseUser.uid.slice(0, 4)}`,
-      communeId: 'castro',
-      accountType: 'individual',
-    });
+  const existingPromise = bootstrapInFlight.get(firebaseUser.uid);
+  if (existingPromise) {
+    return existingPromise;
+  }
+
+  const task = (async () => {
+    const userRef = doc(db, 'users', firebaseUser.uid);
+    const snap = await getDoc(userRef);
+    if (!snap.exists()) {
+      const emailPrefix = (firebaseUser.email || 'vecino').split('@')[0];
+      await initializeUserDocuments(firebaseUser, {
+        fullName: firebaseUser.displayName || emailPrefix,
+        username: `${emailPrefix}_${firebaseUser.uid.slice(0, 4)}`,
+        communeId: 'castro',
+        accountType: 'individual',
+      });
+    }
+  })();
+
+  bootstrapInFlight.set(firebaseUser.uid, task);
+  try {
+    await task;
+  } finally {
+    bootstrapInFlight.delete(firebaseUser.uid);
   }
 }
 
@@ -397,11 +418,20 @@ export async function uploadAvatarImage(userId: string, file: File): Promise<str
   const ext = file.name.split('.').pop() || 'webp';
   const filePath = `avatars/${userId}/avatar_${Date.now()}.${ext}`;
   const fileRef = ref(storage, filePath);
-  await uploadBytes(fileRef, file, {
-    contentType: file.type || 'image/webp',
-    cacheControl: 'public,max-age=3600',
-  });
-  return getDownloadURL(fileRef);
+  try {
+    await Promise.race([
+      uploadBytes(fileRef, file, {
+        contentType: file.type || 'image/webp',
+        cacheControl: 'public,max-age=3600',
+      }),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Storage timeout')), 3500)
+      ),
+    ]);
+    return await getDownloadURL(fileRef);
+  } catch {
+    return fileToCompactDataUrl(file, 256, 80_000);
+  }
 }
 
 export async function deleteOwnAccount(): Promise<void> {

@@ -11,6 +11,7 @@ import {
 } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { db, handleFirestoreError, OperationType, storage } from './firebase';
+import { fileToCompactDataUrl } from '../utils/imageOptimizer';
 import {
   fetchImagesByProductIds,
   fetchLookupMaps,
@@ -125,21 +126,22 @@ export async function listMyProducts(userId: string): Promise<Product[]> {
 }
 
 export async function getProductById(productId: string): Promise<Product | null> {
+  let snap;
   try {
-    const snap = await getDoc(doc(db, 'products', productId));
-    if (!snap.exists()) return null;
-
-    const maps = await fetchLookupMaps();
-    const ownerId = String(snap.data().owner_id || '');
-    const [profiles, images] = await Promise.all([
-      fetchProfilesMap([ownerId]),
-      fetchImagesByProductIds([productId]),
-    ]);
-
-    return hydrateProductDoc(snap.id, snap.data(), { ...maps, profiles, images });
+    snap = await getDoc(doc(db, 'products', productId));
   } catch (error) {
     handleFirestoreError(error, OperationType.GET, `products/${productId}`);
   }
+  if (!snap.exists()) return null;
+
+  const maps = await fetchLookupMaps();
+  const ownerId = String(snap.data().owner_id || '');
+  const [profiles, images] = await Promise.all([
+    fetchProfilesMap([ownerId]),
+    fetchImagesByProductIds([productId]).catch(() => new Map()),
+  ]);
+
+  return hydrateProductDoc(snap.id, snap.data(), { ...maps, profiles, images });
 }
 
 export interface CreateProductInput {
@@ -173,15 +175,27 @@ export async function createProductWithImages(input: CreateProductInput): Promis
     const img = input.images[i];
     const storagePath = `products/${input.ownerId}/${productId}/${Date.now()}_${i}.webp`;
     const storageRef = ref(storage, storagePath);
-    await uploadBytes(storageRef, img.file, {
-      contentType: img.file.type || 'image/webp',
-      cacheControl: 'public,max-age=3600',
-    });
-    const publicUrl = await getDownloadURL(storageRef);
+    let finalStoragePath = storagePath;
+    let publicUrl: string;
+    try {
+      await Promise.race([
+        uploadBytes(storageRef, img.file, {
+          contentType: img.file.type || 'image/webp',
+          cacheControl: 'public,max-age=3600',
+        }),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Storage timeout')), 3500)
+        ),
+      ]);
+      publicUrl = await getDownloadURL(storageRef);
+    } catch {
+      finalStoragePath = `inline/${input.ownerId}/${productId}/${i}.webp`;
+      publicUrl = await fileToCompactDataUrl(img.file, 720, 160_000);
+    }
     const imgRef = doc(collection(db, 'product_images'));
     uploadedImages.push({
       id: imgRef.id,
-      storage_path: storagePath,
+      storage_path: finalStoragePath,
       public_url: publicUrl,
       is_primary: img.isPrimary,
       sort_order: i,
@@ -230,10 +244,35 @@ export async function createProductWithImages(input: CreateProductInput): Promis
   }
 
   const created = await getProductById(productId);
-  if (!created) {
-    throw new Error('La publicación se creó, pero no fue posible recargar su detalle.');
-  }
-  return created;
+  if (created) return created;
+
+  const maps = await fetchLookupMaps();
+  return hydrateProductDoc(
+    productId,
+    {
+      id: productId,
+      owner_id: input.ownerId,
+      category_id: input.categoryId,
+      title: input.title.trim(),
+      description: input.description.trim(),
+      condition: input.condition,
+      modality: input.modality,
+      desired_exchange_items:
+        input.modality === 'exchange' ? input.desiredExchangeItems?.trim() || null : null,
+      total_quantity: input.totalQuantity,
+      available_quantity: input.totalQuantity,
+      reserved_quantity: 0,
+      commune_id: input.communeId,
+      sector_id: input.sectorId || null,
+      delivery_method: input.deliveryMethod.trim(),
+      status: 'pending',
+    },
+    {
+      ...maps,
+      profiles: await fetchProfilesMap([input.ownerId]),
+      images: new Map([[productId, uploadedImages.map((img) => ({ ...img, product_id: productId }))]]),
+    }
+  );
 }
 
 export async function archiveOwnProduct(productId: string): Promise<void> {

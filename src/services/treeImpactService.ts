@@ -39,7 +39,11 @@ export async function getTreeProgress(userId: string): Promise<UserTreeProgress 
 export async function listAllAchievements(): Promise<Achievement[]> {
   try {
     const snap = await getDocs(
-      query(collection(db, 'achievements'), orderBy('required_operations', 'asc'))
+      query(
+        collection(db, 'achievements'),
+        where('required_operations', '>=', 1),
+        orderBy('required_operations', 'asc')
+      )
     );
     return snap.docs.map((d) => {
       const data = d.data();
@@ -85,11 +89,10 @@ export async function listUserAchievements(userId: string): Promise<UserAchievem
 
 export async function listImpactRecords(communeId?: string): Promise<ImpactRecord[]> {
   try {
-    const q = communeId
-      ? query(collection(db, 'impact_records'), where('commune_id', '==', communeId))
-      : collection(db, 'impact_records');
+    const q = query(collection(db, 'impact_records'), where('quantity', '>=', 1));
     const [snap, maps] = await Promise.all([getDocs(q), fetchLookupMaps()]);
     return snap.docs
+      .filter((d) => !communeId || String(d.data().commune_id || '') === communeId)
       .map((d) => {
         const data = d.data();
         const cat = maps.categories.get(String(data.category_id || ''));

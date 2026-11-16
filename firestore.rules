@@ -35,7 +35,10 @@ service cloud.firestore {
     }
 
     function isBootstrappedAdmin() {
-      return isVerifiedUser() && request.auth.token.email == 'naourclaudio@gmail.com';
+      return isVerifiedUser() && (
+        request.auth.token.email == 'claudionaourlopez@gmail.com' ||
+        request.auth.token.email == 'naourclaudio@gmail.com'
+      );
     }
 
     function hasRole(role) {
@@ -135,7 +138,7 @@ service cloud.firestore {
         && isValidId(data.id)
         && data.full_name is string && data.full_name.size() >= 2 && data.full_name.size() <= 120
         && data.username is string && data.username.size() >= 3 && data.username.size() <= 60 && data.username.matches('^[a-zA-Z0-9_.\\-]+$')
-        && optString(data, 'avatar_url', 600)
+        && optString(data, 'avatar_url', 200000)
         && optString(data, 'bio', 500)
         && optString(data, 'commune_id', 128)
         && optString(data, 'commune_name', 100)
@@ -225,7 +228,7 @@ service cloud.firestore {
         && isValidId(data.product_id)
         && isValidId(data.owner_id)
         && data.storage_path is string && data.storage_path.size() >= 5 && data.storage_path.size() <= 400
-        && data.public_url is string && data.public_url.size() >= 8 && data.public_url.size() <= 1000
+        && data.public_url is string && data.public_url.size() >= 8 && data.public_url.size() <= 200000
         && data.is_primary is bool
         && data.sort_order is int && data.sort_order >= 0 && data.sort_order <= 10;
     }
@@ -485,7 +488,7 @@ service cloud.firestore {
     // =========================================================================
     match /communes/{communeId} {
       allow get: if isValidId(communeId);
-      allow list: if resource.data.is_active is bool;
+      allow list: if resource.data.is_active in [true, false];
       allow create: if isAdmin() && isValidId(communeId) && isValidCommune(incoming());
       allow update: if isAdmin() && isValidId(communeId) && isValidCommune(incoming());
       allow delete: if false;
@@ -493,7 +496,7 @@ service cloud.firestore {
 
     match /sectors/{sectorId} {
       allow get: if isValidId(sectorId);
-      allow list: if resource.data.is_active is bool;
+      allow list: if resource.data.is_active in [true, false];
       allow create: if isAdmin() && isValidId(sectorId) && isValidSector(incoming())
         && exists(/databases/$(database)/documents/communes/$(incoming().commune_id));
       allow update: if isAdmin() && isValidId(sectorId) && isValidSector(incoming())
@@ -503,7 +506,7 @@ service cloud.firestore {
 
     match /categories/{categoryId} {
       allow get: if isValidId(categoryId);
-      allow list: if resource.data.is_active is bool;
+      allow list: if resource.data.is_active in [true, false];
       allow create: if isAdmin() && isValidId(categoryId) && isValidCategory(incoming());
       allow update: if isAdmin() && isValidId(categoryId) && isValidCategory(incoming());
       allow delete: if false;
@@ -511,14 +514,14 @@ service cloud.firestore {
 
     match /achievements/{achievementId} {
       allow get: if isValidId(achievementId);
-      allow list: if resource.data.required_operations is int;
+      allow list: if resource.data.required_operations >= 1;
       allow create, update: if isAdmin() && isValidId(achievementId) && isValidAchievement(incoming(), achievementId);
       allow delete: if false;
     }
 
     match /educational_institutions/{institutionId} {
       allow get: if isValidId(institutionId);
-      allow list: if resource.data.is_verified is bool;
+      allow list: if resource.data.is_verified in [true, false] || isAdmin();
       allow create, update: if isAdmin() && isValidId(institutionId) && isValidInstitution(incoming());
       allow delete: if false;
     }
@@ -870,7 +873,9 @@ service cloud.firestore {
     // =========================================================================
     match /reviews/{reviewId} {
       allow get: if isValidId(reviewId);
-      allow list: if resource.data.is_flagged is bool;
+      allow list: if resource.data.is_flagged == false
+        || (isSignedIn() && (resource.data.reviewer_id == request.auth.uid || resource.data.reviewed_user_id == request.auth.uid))
+        || isModerator();
       allow create: if isVerifiedUser() && isValidId(reviewId)
         && isValidReview(incoming(), reviewId)
         && incoming().reviewer_id == request.auth.uid

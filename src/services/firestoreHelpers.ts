@@ -115,25 +115,25 @@ export function mapProductImageDoc(id: string, d: DocumentData): ProductImage {
 
 export async function fetchLookupMaps() {
   const [communesSnap, sectorsSnap, categoriesSnap] = await Promise.all([
-    getDocs(collection(db, 'communes')),
-    getDocs(collection(db, 'sectors')),
-    getDocs(collection(db, 'categories')),
+    getDocs(query(collection(db, 'communes'), where('is_active', 'in', [true, false]))).catch(() => null),
+    getDocs(query(collection(db, 'sectors'), where('is_active', 'in', [true, false]))).catch(() => null),
+    getDocs(query(collection(db, 'categories'), where('is_active', 'in', [true, false]))).catch(() => null),
   ]);
 
   const communes = new Map<string, Commune>();
-  communesSnap.forEach((snap) => communes.set(snap.id, mapCommuneDoc(snap.id, snap.data())));
+  communesSnap?.forEach((snap) => communes.set(snap.id, mapCommuneDoc(snap.id, snap.data())));
   if (communes.size === 0) {
     SEED_COMMUNES.forEach((c) => communes.set(c.id, mapCommuneDoc(c.id, c)));
   }
 
   const sectors = new Map<string, Sector>();
-  sectorsSnap.forEach((snap) => sectors.set(snap.id, mapSectorDoc(snap.id, snap.data())));
+  sectorsSnap?.forEach((snap) => sectors.set(snap.id, mapSectorDoc(snap.id, snap.data())));
   if (sectors.size === 0) {
     SEED_SECTORS.forEach((s) => sectors.set(s.id, mapSectorDoc(s.id, s)));
   }
 
   const categories = new Map<string, Category>();
-  categoriesSnap.forEach((snap) =>
+  categoriesSnap?.forEach((snap) =>
     categories.set(snap.id, mapCategoryDoc(snap.id, snap.data()))
   );
   if (categories.size === 0) {
@@ -166,23 +166,17 @@ export async function fetchImagesByProductIds(
   const map = new Map<string, ProductImage[]>();
   if (uniqueIds.length === 0) return map;
 
-  // Firestore 'in' queries accept up to 30 values per batch
-  const chunks: string[][] = [];
-  for (let i = 0; i < uniqueIds.length; i += 30) {
-    chunks.push(uniqueIds.slice(i, i + 30));
-  }
-
-  for (const chunk of chunks) {
-    const snap = await getDocs(
-      query(collection(db, 'product_images'), where('product_id', 'in', chunk))
-    );
-    snap.forEach((docSnap) => {
-      const img = mapProductImageDoc(docSnap.id, docSnap.data());
-      const existing = map.get(img.product_id) ?? [];
-      existing.push(img);
-      map.set(img.product_id, existing);
-    });
-  }
+  const idSet = new Set(uniqueIds);
+  const snap = await getDocs(
+    query(collection(db, 'product_images'), where('sort_order', '>=', 0))
+  );
+  snap.forEach((docSnap) => {
+    const img = mapProductImageDoc(docSnap.id, docSnap.data());
+    if (!idSet.has(img.product_id)) return;
+    const existing = map.get(img.product_id) ?? [];
+    existing.push(img);
+    map.set(img.product_id, existing);
+  });
 
   map.forEach((imgs, key) => {
     map.set(

@@ -32,6 +32,7 @@ setPersistence(auth, browserLocalPersistence).catch((err) => {
 
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const storage = getStorage(app);
+storage.maxUploadRetryTime = 3000;
 export const functions = getFunctions(app);
 
 export enum OperationType {
@@ -147,8 +148,17 @@ export function translateFirebaseError(err: unknown): string {
   if (raw.includes('auth/too-many-requests')) {
     return 'Demasiados intentos seguidos. Espera unos minutos antes de volver a intentar.';
   }
-  if (raw.includes('auth/popup-closed-by-user')) {
+  if (raw.includes('auth/popup-closed-by-user') || raw.includes('auth/cancelled-popup-request')) {
     return 'Se cerró la ventana de acceso con Google antes de completar el inicio de sesión.';
+  }
+  if (raw.includes('auth/popup-blocked')) {
+    return 'El navegador bloqueó la ventana emergente de Google. Permite ventanas emergentes para este sitio e inténtalo nuevamente.';
+  }
+  if (raw.includes('auth/unauthorized-domain')) {
+    return 'Este dominio aún no está autorizado en Firebase Authentication. Recarga o revisa la configuración de Firebase.';
+  }
+  if (raw.includes('auth/network-request-failed')) {
+    return 'Error de red al conectar con Firebase. Verifica tu conexión e inténtalo nuevamente.';
   }
   if (raw.includes('auth/operation-not-allowed')) {
     return 'El acceso con correo y contraseña aún no está habilitado en Firebase Authentication. Puedes iniciar con Google o habilitar Email/Password en Firebase Console.';

@@ -1,12 +1,12 @@
 {
-  "projectId": "gen-lang-client-0131136890",
-  "appId": "1:881794344672:web:3e3346c9e60969c1cad285",
-  "apiKey": "AIzaSyC5lI2sy8gABVCE0tAaNxJ7umyGetIS2p4",
-  "authDomain": "gen-lang-client-0131136890.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-policircular-5745eafb-1cbd-42f8-b727-1f27410a09e5",
-  "storageBucket": "gen-lang-client-0131136890.firebasestorage.app",
-  "messagingSenderId": "881794344672",
+  "projectId": "policircular-b59fa",
+  "appId": "1:649031857177:web:5ea15b217faad447112688",
+  "apiKey": "AIzaSyC6W9_dJTxXjXdl8Z5ZWSZuAvb3tliO0Ow",
+  "authDomain": "policircular-b59fa.firebaseapp.com",
+  "firestoreDatabaseId": "ai-studio-policircular-71d7347c-675f-4b97-9f73-d91ba0764a71",
+  "storageBucket": "policircular-b59fa.firebasestorage.app",
+  "messagingSenderId": "649031857177",
   "measurementId": "",
-  "oAuthClientId": "881794344672-hm96v5c565emok0t2pfsstpranvu6v1v.apps.googleusercontent.com",
+  "oAuthClientId": "649031857177-qfhr0kf2uk9dm03ccnbph7icem6haaki.apps.googleusercontent.com",
   "recaptchaSiteKey": ""
 }

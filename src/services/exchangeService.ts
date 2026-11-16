@@ -665,14 +665,17 @@ export async function submitExchangeReviewRpc(params: {
 export async function listUserReviews(userId: string): Promise<Review[]> {
   try {
     const snap = await getDocs(
-      query(collection(db, 'reviews'), where('reviewed_user_id', '==', userId))
+      query(collection(db, 'reviews'), where('is_flagged', '==', false))
     );
-    if (snap.empty) return [];
+    const matchedDocs = snap.docs.filter(
+      (d) => String(d.data().reviewed_user_id || '') === userId
+    );
+    if (matchedDocs.length === 0) return [];
 
-    const reviewerIds = snap.docs.map((d) => String(d.data().reviewer_id || ''));
+    const reviewerIds = matchedDocs.map((d) => String(d.data().reviewer_id || ''));
     const profiles = await fetchProfilesMap(reviewerIds);
 
-    return snap.docs
+    return matchedDocs
       .map((d) => {
         const data = d.data();
         const prof = profiles.get(String(data.reviewer_id || ''));

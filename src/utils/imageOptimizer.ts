@@ -52,3 +52,46 @@ export async function validateAndOptimizeImage(file: File): Promise<OptimizedIma
     sizeBytes: optimizedFile.size,
   };
 }
+
+export async function fileToCompactDataUrl(
+  file: File,
+  maxDimension = 720,
+  maxLengthChars = 160_000
+): Promise<string> {
+  const bitmap = await createImageBitmap(file);
+  let dim = maxDimension;
+  let quality = 0.78;
+  let bestDataUrl = '';
+
+  try {
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const scale = Math.min(1, dim / Math.max(bitmap.width, bitmap.height));
+      const targetWidth = Math.max(1, Math.round(bitmap.width * scale));
+      const targetHeight = Math.max(1, Math.round(bitmap.height * scale));
+
+      const canvas = document.createElement('canvas');
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        throw new Error('No fue posible procesar la imagen.');
+      }
+      ctx.drawImage(bitmap, 0, 0, targetWidth, targetHeight);
+
+      const webpUrl = canvas.toDataURL('image/webp', quality);
+      const dataUrl = webpUrl.startsWith('data:image/webp')
+        ? webpUrl
+        : canvas.toDataURL('image/jpeg', quality);
+      bestDataUrl = dataUrl;
+      if (dataUrl.length <= maxLengthChars) {
+        return dataUrl;
+      }
+      dim = Math.round(dim * 0.75);
+      quality = Math.max(0.45, quality - 0.1);
+    }
+  } finally {
+    bitmap.close();
+  }
+
+  return bestDataUrl;
+}

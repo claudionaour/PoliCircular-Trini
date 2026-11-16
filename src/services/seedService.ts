@@ -1,4 +1,4 @@
-import { collection, doc, getDocs, limit, query, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { collection, doc, getDocs, limit, query, serverTimestamp, where, writeBatch } from 'firebase/firestore';
 import { db } from './firebase';
 
 export const SEED_COMMUNES = [
@@ -50,9 +50,15 @@ export async function ensureInitialTerritorialSeed(force = false): Promise<boole
   if (seedAttempted && !force) return false;
   seedAttempted = true;
 
-  const existingCommunes = await getDocs(query(collection(db, 'communes'), limit(1)));
-  const existingCategories = await getDocs(query(collection(db, 'categories'), limit(1)));
-  const existingAchievements = await getDocs(query(collection(db, 'achievements'), limit(1)));
+  const existingCommunes = await getDocs(
+    query(collection(db, 'communes'), where('is_active', 'in', [true, false]), limit(1))
+  );
+  const existingCategories = await getDocs(
+    query(collection(db, 'categories'), where('is_active', 'in', [true, false]), limit(1))
+  );
+  const existingAchievements = await getDocs(
+    query(collection(db, 'achievements'), where('required_operations', '>=', 1), limit(1))
+  );
 
   if (!force && !existingCommunes.empty && !existingCategories.empty && !existingAchievements.empty) {
     return false;

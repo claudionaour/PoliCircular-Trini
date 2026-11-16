@@ -75,7 +75,7 @@
         "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
         "full_name": { "type": "string", "minLength": 2, "maxLength": 120 },
         "username": { "type": "string", "minLength": 3, "maxLength": 60, "pattern": "^[a-zA-Z0-9_.\\-]+$" },
-        "avatar_url": { "type": "string", "maxLength": 600 },
+        "avatar_url": { "type": "string", "maxLength": 200000 },
         "bio": { "type": "string", "maxLength": 500 },
         "commune_id": { "type": "string", "maxLength": 128 },
         "commune_name": { "type": "string", "maxLength": 100 },
@@ -165,7 +165,7 @@
         "product_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
         "owner_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
         "storage_path": { "type": "string", "minLength": 5, "maxLength": 400 },
-        "public_url": { "type": "string", "minLength": 8, "maxLength": 1000 },
+        "public_url": { "type": "string", "minLength": 8, "maxLength": 200000 },
         "is_primary": { "type": "boolean" },
         "sort_order": { "type": "integer" },
         "created_at": { "type": "string", "format": "date-time" }
