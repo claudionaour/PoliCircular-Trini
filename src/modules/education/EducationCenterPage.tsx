@@ -7,6 +7,7 @@ import {
   saveEducationModuleProgress,
 } from '../../services/treeImpactService';
 import { isFirebaseConfigured } from '../../services/firebase';
+import eduChiloeImg from '../../assets/images/edu_chiloe_sustainability_1794851579367.jpg';
 
 interface Lesson {
   slug: string;
@@ -145,7 +146,7 @@ export const EducationCenterPage: React.FC = () => {
         </div>
         <div className="lg:col-span-6 min-h-[220px]">
           <ImageWithFallback
-            src="/src/assets/images/edu_chiloe_sustainability_1794851579367.jpg"
+            src={eduChiloeImg}
             alt="Bahía de Castro y palafitos en Chiloé"
             className="w-full h-full object-cover"
           />

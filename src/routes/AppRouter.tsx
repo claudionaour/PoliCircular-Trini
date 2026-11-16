@@ -45,7 +45,7 @@ const AdaptiveShell: React.FC = () => {
 
 export const AppRouter: React.FC = () => {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <Routes>
         {/* Rutas públicas */}
         <Route element={<PublicLayout />}>

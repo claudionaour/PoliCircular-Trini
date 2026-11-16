@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>PoliCircular — Redirigiendo...</title>
+    <script>
+      // Soporte SPA para GitHub Pages (preserva la ruta y query string en recargas o enlaces directos)
+      (function () {
+        var isGithubIo = window.location.hostname.endsWith('.github.io');
+        var pathSegmentsToKeep = isGithubIo ? 1 : 0;
+        var l = window.location;
+        var baseSegments = l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/');
+        var routePath = l.pathname
+          .slice(1)
+          .split('/')
+          .slice(pathSegmentsToKeep)
+          .join('/')
+          .replace(/&/g, '~and~');
+        var queryStr = l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '';
+        l.replace(
+          l.protocol +
+            '//' +
+            l.hostname +
+            (l.port ? ':' + l.port : '') +
+            baseSegments +
+            '/?/' +
+            routePath +
+            queryStr +
+            l.hash
+        );
+      })();
+    </script>
+  </head>
+  <body></body>
+</html>

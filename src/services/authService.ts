@@ -172,11 +172,11 @@ export async function initializeUserDocuments(
 
 const PUBLIC_WEB_ORIGIN = 'https://ais-pre-dj7zeddnfchgopwqeu36fl-839173396062.us-east1.run.app';
 
-function getAuthContinueOrigin(): string {
-  if (Capacitor.isNativePlatform()) {
-    return PUBLIC_WEB_ORIGIN;
-  }
-  return window.location.origin;
+function getAuthContinueBaseUrl(): string {
+  const origin = Capacitor.isNativePlatform() ? PUBLIC_WEB_ORIGIN : window.location.origin;
+  const basePath = import.meta.env.BASE_URL || '/';
+  const normalizedBase = basePath.endsWith('/') ? basePath : `${basePath}/`;
+  return `${origin}${normalizedBase}`;
 }
 
 export async function registerUser(payload: RegisterPayload) {
@@ -207,7 +207,7 @@ export async function registerUser(payload: RegisterPayload) {
   });
 
   await sendEmailVerification(firebaseUser, {
-    url: `${getAuthContinueOrigin()}/iniciar-sesion`,
+    url: `${getAuthContinueBaseUrl()}iniciar-sesion`,
   });
 
   return { user: firebaseUser };
@@ -266,7 +266,7 @@ export async function resendVerificationEmail(): Promise<void> {
     throw new Error('Inicia sesión primero para reenviar el correo de verificación.');
   }
   await sendEmailVerification(current, {
-    url: `${getAuthContinueOrigin()}/iniciar-sesion`,
+    url: `${getAuthContinueBaseUrl()}iniciar-sesion`,
   });
 }
 
@@ -276,7 +276,7 @@ export async function signOutUser(): Promise<void> {
 
 export async function sendPasswordRecovery(email: string): Promise<void> {
   await sendPasswordResetEmail(auth, email.trim(), {
-    url: `${getAuthContinueOrigin()}/restablecer-contrasena`,
+    url: `${getAuthContinueBaseUrl()}restablecer-contrasena`,
   });
 }
 

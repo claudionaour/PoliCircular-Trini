@@ -5,6 +5,8 @@ import { BrandLogo } from '../../components/BrandLogo';
 import { ImageWithFallback } from '../../components/ImageWithFallback';
 import { PWAInstallButton } from '../../components/PWAInstallButton';
 import { useAuth } from '../../context/AuthContext';
+import heroCastroImg from '../../assets/images/hero_castro_circular_1794851579501.jpg';
+import showcaseObjectsImg from '../../assets/images/circular_objects_showcase_1794851579551.jpg';
 
 export const WelcomePage: React.FC = () => {
   const { user } = useAuth();
@@ -81,7 +83,7 @@ export const WelcomePage: React.FC = () => {
           <div className="lg:col-span-6">
             <div className="h-full min-h-[300px] lg:min-h-[440px] rounded-3xl overflow-hidden border border-[#244B73] bg-[#102C49]">
               <ImageWithFallback
-                src="/src/assets/images/hero_castro_circular_1794851579501.jpg"
+                src={heroCastroImg}
                 alt="Comunidad de Castro compartiendo libros, ropa y herramientas en espacio de economía circular"
                 className="w-full h-full object-cover"
               />
@@ -129,7 +131,7 @@ export const WelcomePage: React.FC = () => {
         <div className="grid lg:grid-cols-12 gap-8 items-center">
           <div className="lg:col-span-5 rounded-3xl overflow-hidden border border-[#244B73] aspect-[4/3]">
             <ImageWithFallback
-              src="/src/assets/images/circular_objects_showcase_1794851579551.jpg"
+              src={showcaseObjectsImg}
               alt="Objetos cotidianos restaurados listos para una segunda oportunidad"
               className="w-full h-full object-cover"
             />
