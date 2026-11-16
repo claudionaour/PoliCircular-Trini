@@ -1,0 +1,1228 @@
+# MEGA PROMPT MAESTRO: DESARROLLO DE POLICIRCULAR
+
+## 1. IDENTIDAD Y OBJETIVO DEL PROYECTO
+
+Actúa como un equipo multidisciplinario de desarrollo de software compuesto por:
+
+- Arquitecto de software senior.
+- Desarrollador Full Stack especializado en React y TypeScript.
+- Especialista en bases de datos PostgreSQL y Supabase.
+- Especialista en seguridad informática y políticas RLS.
+- Diseñador UX/UI especializado en aplicaciones móviles y PWA.
+- Especialista en economía circular y sostenibilidad.
+- Especialista en plataformas educativas y comunitarias.
+- Ingeniero QA encargado de pruebas funcionales y seguridad.
+
+Tu misión es diseñar, programar y entregar una aplicación web completa denominada **PoliCircular**.
+
+No quiero solamente una maqueta, una demostración visual ni una página de presentación. Necesito una aplicación funcional, con arquitectura real, navegación operativa, persistencia de información, autenticación, base de datos, permisos, procesos y módulos conectados.
+
+La aplicación debe quedar preparada para ser probada en una comunidad piloto y posteriormente ampliarse a otras comunas de Chiloé y Chile.
+
+### Nombre
+
+POLICIRCULAR
+
+### Eslogan
+
+"Lo que ya no necesitas puede ser lo que alguien está buscando".
+
+### Concepto
+
+PoliCircular es una plataforma digital educativa y comunitaria de economía circular que permite regalar, intercambiar, reutilizar y recuperar productos sin utilizar dinero.
+
+Su propósito es conectar personas, familias, establecimientos educacionales, organizaciones y comunidades para prolongar la vida útil de los objetos, reducir residuos y promover hábitos de consumo responsable.
+
+### Diferenciación fundamental
+
+PoliCircular NO es un marketplace comercial.
+
+Queda estrictamente prohibido implementar:
+- Compraventa de productos.
+- Precios de productos.
+- Pagos dentro de la plataforma.
+- Carteras de dinero.
+- Comisiones por intercambio.
+- Pasarelas de pago.
+- Monetización de los intercambios.
+
+La plataforma permite dos modalidades:
+
+1. REGALAR: una persona entrega gratuitamente un producto a otra.
+2. INTERCAMBIAR: dos personas acuerdan intercambiar productos sin utilizar dinero.
+
+Las condiciones se acuerdan libremente entre los participantes.
+
+---
+
+# 2. CONTEXTO GEOGRÁFICO E INSTITUCIONAL
+
+La primera implementación se realizará en:
+
+- Comuna: Castro.
+- Región: Los Lagos.
+- País: Chile.
+- Territorio de referencia: Archipiélago de Chiloé.
+- Idioma: español.
+- Zona horaria: America/Santiago.
+- Moneda: no corresponde, porque la aplicación no realiza operaciones monetarias.
+
+La arquitectura debe permitir incorporar posteriormente:
+
+- Ancud.
+- Dalcahue.
+- Chonchi.
+- Quemchi.
+- Quellón.
+- Queilen.
+- Puqueldón.
+- Curaco de Vélez.
+- Quinchao.
+- Otras comunas de Chile.
+
+No diseñes el sistema exclusivamente para Castro. Debe existir una estructura territorial que permita agregar comunas, sectores y regiones sin modificar la arquitectura principal.
+
+La identidad institucional será educativa, comunitaria y ambiental.
+
+La aplicación debe poder ser utilizada por:
+- Personas particulares.
+- Familias.
+- Organizaciones comunitarias.
+- Establecimientos educacionales.
+- Cursos y comunidades escolares.
+- Instituciones colaboradoras.
+
+Para la participación de menores de edad deben existir mecanismos de protección, supervisión y autorización institucional o de adultos responsables. No habilites comunicación privada irrestricta entre adultos y menores.
+
+---
+
+# 3. IDENTIDAD VISUAL
+
+Diseña una identidad moderna, atractiva, amigable, tecnológica y relacionada con la economía circular.
+
+### Paleta oficial
+
+- Azul marino: #102C49.
+- Blanco: #FFFFFF.
+- Naranjo: #F28C28.
+- Gris claro para fondos secundarios.
+- Verde suave para indicadores ambientales positivos.
+
+### Logotipo
+
+Crear un logotipo original para PoliCircular.
+
+Debe representar:
+- Circularidad.
+- Reutilización.
+- Comunidad.
+- Intercambio.
+- Naturaleza.
+- Segunda oportunidad.
+
+Puede utilizar flechas circulares, hojas, objetos reutilizables o elementos gráficos que simbolicen la transformación de los recursos.
+
+No utilizar una imagen genérica como identidad definitiva.
+
+### Estilo de interfaz
+
+La aplicación debe tener:
+- Diseño limpio.
+- Navegación intuitiva.
+- Tarjetas visuales.
+- Fotografías grandes de productos.
+- Iconografía consistente.
+- Botones fácilmente reconocibles.
+- Tipografía moderna y legible.
+- Animaciones suaves y discretas.
+- Diseño responsive.
+- Accesibilidad.
+- Excelente funcionamiento en teléfonos móviles.
+
+Debe parecer una aplicación profesional y no un sitio web institucional antiguo.
+
+---
+
+# 4. TECNOLOGÍAS OBLIGATORIAS
+
+Utiliza una arquitectura moderna, mantenible y escalable.
+
+### Frontend
+
+- React.
+- TypeScript.
+- Vite.
+- React Router.
+- Tailwind CSS.
+- Lucide React.
+- React Hook Form.
+- Zod.
+
+### Backend
+
+Utilizar Supabase como backend principal:
+
+- Supabase Authentication.
+- PostgreSQL.
+- Supabase Storage.
+- Supabase Realtime.
+- Row Level Security (RLS).
+- Funciones SQL y RPC para operaciones críticas.
+
+### PWA
+
+Utilizar:
+- Vite PWA Plugin.
+- Web App Manifest.
+- Service Worker.
+- Instalación en Android, escritorio y dispositivos compatibles.
+- Diseño adaptable a diferentes tamaños de pantalla.
+
+### Mapas
+
+Utilizar OpenStreetMap cuando sea necesario para visualizar sectores y puntos de encuentro.
+
+No mostrar domicilios particulares públicamente.
+
+### Arquitectura
+
+Separar claramente:
+
+- Componentes.
+- Páginas.
+- Módulos funcionales.
+- Servicios.
+- Hooks.
+- Tipos.
+- Contextos.
+- Utilidades.
+- Rutas.
+- Configuración.
+- Migraciones SQL.
+- Pruebas.
+
+No mezclar toda la aplicación en un solo archivo.
+
+---
+
+# 5. ESTRUCTURA GENERAL DE LA APLICACIÓN
+
+La aplicación tendrá los siguientes módulos:
+
+1. Bienvenida.
+2. Registro e inicio de sesión.
+3. Perfil de usuario.
+4. Publicar productos.
+5. Explorar productos.
+6. Sistema de intereses.
+7. Sistema de Match.
+8. Chat privado.
+9. Coordinación de entregas.
+10. Confirmación de intercambios.
+11. Evaluaciones y reputación.
+12. Mi Árbol Circular.
+13. Impacto Ambiental.
+14. Centro Educativo.
+15. Notificaciones.
+16. Administración.
+17. Configuración y privacidad.
+
+Todos los módulos deben compartir información y funcionar como parte de un mismo sistema.
+
+---
+
+# 6. REGISTRO Y AUTENTICACIÓN
+
+Crear un sistema de autenticación real.
+
+Permitir:
+- Registro con nombre completo.
+- Nombre de usuario.
+- Correo electrónico.
+- Contraseña.
+- Fotografía de perfil.
+- Comuna.
+- Sector.
+- Tipo de cuenta.
+- Recuperación de contraseña.
+- Verificación de correo electrónico.
+- Cierre de sesión.
+- Edición del perfil.
+- Eliminación de cuenta.
+
+Tipos de cuenta:
+
+- Individual.
+- Organización.
+- Educativa.
+
+Para cuentas de organizaciones y establecimientos educacionales permitir incorporar:
+- Nombre institucional.
+- Descripción.
+- Persona responsable.
+- Datos de contacto privados.
+- Identificación institucional cuando corresponda.
+
+No mostrar públicamente teléfonos, correos ni domicilios particulares.
+
+Los roles deben estar separados de los datos del perfil.
+
+Roles:
+
+- Usuario.
+- Moderador.
+- Administrador.
+- Superadministrador.
+
+Ningún usuario podrá asignarse privilegios administrativos desde el registro o desde el frontend.
+
+---
+
+# 7. PUBLICACIÓN DE PRODUCTOS
+
+Crear un formulario de publicación dividido en pasos.
+
+### Paso 1: Fotografías
+
+Permitir hasta cinco fotografías por producto.
+
+Funciones:
+- Subir fotografías.
+- Previsualizar imágenes.
+- Eliminar fotografías.
+- Cambiar fotografía principal.
+- Validar formato.
+- Limitar tamaño.
+- Optimizar imágenes.
+
+### Paso 2: Información
+
+Campos:
+- Nombre del producto.
+- Descripción.
+- Categoría.
+- Estado.
+- Cantidad disponible.
+
+Estados:
+- Nuevo.
+- Buen estado.
+- Requiere reparación.
+- Para reciclaje.
+
+### Paso 3: Modalidad
+
+Dos opciones:
+
+REGALO GRATUITO.
+
+INTERCAMBIO.
+
+Cuando se elija intercambio, permitir describir qué productos se desean recibir.
+
+No agregar campos de precio ni valor monetario.
+
+### Paso 4: Ubicación
+
+- Región.
+- Comuna.
+- Sector.
+- Método de entrega.
+
+La ubicación pública será aproximada.
+
+### Paso 5: Confirmación
+
+Mostrar una vista previa de la publicación antes de enviarla.
+
+Al confirmar, el producto debe quedar en estado:
+
+PENDIENTE DE MODERACIÓN.
+
+No debe aparecer en el catálogo público hasta que un moderador lo apruebe.
+
+### Estados de publicación
+
+- Borrador.
+- Pendiente.
+- Aprobada.
+- Reservada.
+- En proceso de entrega.
+- Finalizada.
+- Rechazada.
+- Suspendida.
+- Archivada.
+- Vencida.
+
+---
+
+# 8. SISTEMA DE MODERACIÓN OBLIGATORIA
+
+Este módulo es fundamental.
+
+Ninguna publicación debe aparecer públicamente sin aprobación previa.
+
+Crear un panel de moderación que permita:
+
+- Visualizar publicaciones pendientes.
+- Revisar fotografías.
+- Revisar descripción.
+- Revisar categoría.
+- Revisar estado del producto.
+- Revisar modalidad.
+- Aprobar.
+- Rechazar.
+- Suspender.
+- Registrar observaciones.
+- Consultar historial.
+
+Cuando una publicación sea rechazada, el usuario recibirá una notificación con el motivo.
+
+Cuando sea aprobada, aparecerá automáticamente en Explorar.
+
+Cada acción administrativa debe quedar registrada.
+
+La aprobación y el rechazo deben ejecutarse mediante funciones seguras del backend, no mediante cambios directos del navegador.
+
+---
+
+# 9. EXPLORAR PRODUCTOS
+
+Diseñar una pantalla visual atractiva que permita descubrir productos.
+
+Debe contar con dos modalidades de visualización:
+
+1. Tarjetas.
+2. Listado.
+
+Cada tarjeta debe mostrar:
+- Fotografía.
+- Nombre.
+- Categoría.
+- Estado.
+- Modalidad.
+- Sector o comuna.
+- Descripción resumida.
+- Perfil del oferente.
+- Reputación del oferente.
+
+Agregar filtros:
+
+- Categoría.
+- Comuna.
+- Sector.
+- Modalidad.
+- Estado.
+- Fecha de publicación.
+- Disponibilidad.
+
+Mostrar únicamente publicaciones aprobadas y disponibles.
+
+Incorporar búsqueda por texto.
+
+---
+
+# 10. SISTEMA DE DESLIZAMIENTO E INTERESES
+
+Crear una experiencia de exploración inspirada en aplicaciones modernas de tarjetas.
+
+El usuario podrá:
+
+- Deslizar hacia la derecha para mostrar interés.
+- Deslizar hacia la izquierda para descartar.
+- Guardar productos como favoritos.
+- Abrir detalles.
+- Consultar el perfil del oferente.
+
+Incluir botones alternativos para quienes no quieran utilizar gestos.
+
+No confundir un interés con un Match confirmado.
+
+Los intereses deben quedar almacenados en la base de datos.
+
+---
+
+# 11. SISTEMA DE MATCH
+
+Crear un sistema de solicitudes y coincidencias.
+
+### Para regalos
+
+1. Un usuario encuentra un producto.
+2. Selecciona Me interesa.
+3. Envía una solicitud.
+4. El propietario recibe una notificación.
+5. El propietario acepta o rechaza.
+6. Si acepta, se genera un Match.
+
+### Para intercambios
+
+1. El usuario encuentra un producto.
+2. Selecciona Intercambiar.
+3. Puede asociar uno de sus propios productos aprobados.
+4. Envía una propuesta.
+5. El propietario revisa la propuesta.
+6. Acepta, rechaza o solicita conversar.
+7. Si acepta, se genera un Match.
+
+Un Match aceptado debe:
+- Crear una conversación privada.
+- Reservar la cantidad acordada.
+- Evitar que el mismo producto o unidad sea reservado simultáneamente por varias personas.
+- Registrar la operación.
+
+Para productos con varias unidades, permitir gestionar cantidades disponibles y reservas parciales.
+
+Utilizar transacciones SQL para evitar condiciones de carrera.
+
+---
+
+# 12. CHAT PRIVADO
+
+Crear un chat moderno y funcional mediante Supabase Realtime.
+
+Funciones:
+- Mensajes en tiempo real.
+- Fecha y hora.
+- Indicador de mensajes leídos.
+- Notificaciones.
+- Historial.
+- Bloquear usuario.
+- Denunciar conversación.
+- Cancelar acuerdo.
+
+El chat debe estar disponible exclusivamente para los participantes del Match.
+
+No exponer conversaciones a otros usuarios ni administradores sin una justificación y autorización de moderación correspondiente.
+
+---
+
+# 13. COORDINACIÓN Y CONFIRMACIÓN DE ENTREGA
+
+Crear un módulo para coordinar la entrega.
+
+Estados:
+
+- Pendiente.
+- Coordinando.
+- Entrega acordada.
+- Entregado por confirmar.
+- Finalizado.
+- Cancelado.
+- En disputa.
+
+Permitir:
+- Proponer fecha.
+- Proponer horario.
+- Coordinar lugar.
+- Confirmar entrega.
+- Cancelar acuerdo.
+- Informar incumplimientos.
+
+La dirección exacta no debe publicarse.
+
+La confirmación debe ser bilateral.
+
+Cuando ambas personas confirmen la entrega, el sistema debe:
+
+1. Finalizar el intercambio.
+2. Actualizar el estado del producto.
+3. Registrar la operación.
+4. Actualizar el árbol circular.
+5. Registrar el impacto ambiental cuando corresponda.
+6. Habilitar evaluaciones.
+7. Generar notificaciones.
+
+Si solo una persona confirma, la operación permanece pendiente de resolución.
+
+No considerar una entrega como finalizada por una sola confirmación.
+
+---
+
+# 14. EVALUACIONES Y REPUTACIÓN
+
+Después de una operación finalizada, habilitar evaluaciones.
+
+Sistema de 1 a 5 estrellas.
+
+Criterios:
+
+- Cumplimiento.
+- Puntualidad.
+- Estado del producto.
+- Comunicación.
+- Respeto.
+
+Permitir comentarios.
+
+Las evaluaciones deben estar vinculadas a intercambios reales y finalizados.
+
+Evitar evaluaciones falsas o repetidas.
+
+Crear un indicador de reputación del usuario.
+
+Una evaluación negativa no debe eliminar automáticamente los logros del árbol circular.
+
+Permitir denunciar evaluaciones abusivas para revisión administrativa.
+
+---
+
+# 15. MI ÁRBOL CIRCULAR
+
+Crear una sección visual muy atractiva.
+
+Cada usuario tendrá un árbol circular que crecerá a medida que complete operaciones verificadas.
+
+Etapas:
+
+1. Semilla: registro.
+2. Brote: primera operación finalizada.
+3. Árbol joven: tres operaciones.
+4. Árbol desarrollado: diez operaciones.
+5. Árbol frutal: veinticinco operaciones.
+
+Cada etapa debe tener una representación gráfica diferente.
+
+Agregar insignias:
+
+- Primera segunda oportunidad.
+- Primer regalo.
+- Primer intercambio.
+- Diez productos reutilizados.
+- Veinticinco operaciones.
+- Embajador Circular.
+- Comunidad Circular.
+
+El árbol debe actualizarse automáticamente cuando una operación sea confirmada por ambas partes.
+
+Implementar mecanismos contra el abuso de logros.
+
+No contar publicaciones como intercambios realizados.
+
+---
+
+# 16. IMPACTO AMBIENTAL
+
+Crear un panel denominado Impacto Circular.
+
+Mostrar indicadores:
+
+- Productos reutilizados.
+- Productos regalados.
+- Intercambios realizados.
+- Usuarios participantes.
+- Organizaciones participantes.
+- Productos recuperados.
+- Peso estimado de materiales reutilizados.
+- Peso medido de materiales reutilizados.
+- Evolución mensual.
+- Categorías con mayor reutilización.
+- Sectores con mayor participación.
+
+Crear gráficos y estadísticas.
+
+Distinguir claramente:
+
+PESO MEDIDO: registrado mediante pesaje real.
+
+PESO ESTIMADO: calculado mediante una metodología de referencia.
+
+Nunca presentar estimaciones como mediciones reales.
+
+El sistema debe permitir generar informes descargables para establecimientos educacionales, organizaciones y futuras instituciones colaboradoras.
+
+---
+
+# 17. CENTRO EDUCATIVO: APRENDAMOS A CIRCULAR
+
+Incorporar un módulo educativo.
+
+Nombre:
+
+APRENDAMOS A CIRCULAR.
+
+Contenidos:
+
+- ¿Qué es la economía circular?
+- Diferencia entre economía lineal y circular.
+- Reutilización.
+- Reparación.
+- Reciclaje.
+- Consumo responsable.
+- Reducción de residuos.
+- Cuidado ambiental.
+- Economía circular en Chiloé.
+
+Incluir:
+- Artículos educativos.
+- Infografías.
+- Consejos.
+- Actividades.
+- Desafíos.
+- Cuestionarios.
+- Insignias educativas.
+
+Crear distintivos para establecimientos:
+
+- Escuela Circular.
+- Curso Reutilizador.
+- Comunidad Sustentable.
+- Embajador Circular.
+
+Permitir que un establecimiento pueda participar con cuentas institucionales supervisadas.
+
+---
+
+# 18. SISTEMA DE NOTIFICACIONES
+
+Crear notificaciones internas.
+
+Eventos:
+
+- Cuenta creada.
+- Publicación recibida.
+- Publicación aprobada.
+- Publicación rechazada.
+- Nueva solicitud.
+- Solicitud aceptada.
+- Solicitud rechazada.
+- Nuevo Match.
+- Nuevo mensaje.
+- Cambio de estado de entrega.
+- Confirmación de entrega.
+- Operación finalizada.
+- Nueva evaluación.
+- Nuevo logro.
+
+Agregar:
+- Centro de notificaciones.
+- Contador de no leídas.
+- Marcar como leída.
+- Historial.
+
+Preparar arquitectura para futuras notificaciones push.
+
+---
+
+# 19. PANEL DE ADMINISTRACIÓN
+
+Crear un panel administrativo independiente.
+
+No debe aparecer en el menú de usuarios normales.
+
+Debe tener un diseño profesional con navegación lateral.
+
+### Dashboard
+
+Mostrar:
+- Usuarios registrados.
+- Publicaciones pendientes.
+- Publicaciones aprobadas.
+- Publicaciones rechazadas.
+- Solicitudes.
+- Match.
+- Operaciones finalizadas.
+- Denuncias.
+- Actividad mensual.
+- Indicadores ambientales.
+
+### Gestión de publicaciones
+
+Permitir:
+- Aprobar.
+- Rechazar.
+- Suspender.
+- Consultar historial.
+
+### Gestión de usuarios
+
+Permitir:
+- Buscar usuarios.
+- Consultar perfiles.
+- Revisar denuncias.
+- Suspender cuentas.
+- Reactivar cuentas cuando corresponda.
+
+### Gestión territorial
+
+Permitir:
+- Crear comunas.
+- Editar comunas.
+- Crear sectores.
+- Editar sectores.
+- Activar o desactivar sectores.
+
+### Gestión educativa
+
+Permitir:
+- Registrar establecimientos.
+- Administrar cuentas institucionales.
+- Consultar participación.
+- Generar informes.
+
+### Gestión de denuncias
+
+Permitir:
+- Revisar denuncias.
+- Registrar decisiones.
+- Resolver conflictos.
+- Mantener trazabilidad.
+
+### Roles
+
+- Moderador: administra publicaciones y denuncias según permisos.
+- Administrador: gestiona usuarios, contenidos y estadísticas.
+- Superadministrador: administra configuración, roles y sistema.
+
+Aplicar permisos reales en el backend.
+
+---
+
+# 20. BASE DE DATOS
+
+Crear un modelo relacional PostgreSQL en Supabase.
+
+Como mínimo, implementar las siguientes tablas:
+
+- communes.
+- sectors.
+- profiles.
+- user_roles.
+- categories.
+- products.
+- product_images.
+- product_interests.
+- match_requests.
+- matches.
+- conversations.
+- messages.
+- exchanges.
+- exchange_confirmations.
+- reviews.
+- reports.
+- moderation_logs.
+- achievements.
+- user_achievements.
+- user_tree_progress.
+- impact_records.
+- notifications.
+
+Todas las relaciones deben utilizar claves primarias y foráneas.
+
+Agregar índices donde corresponda.
+
+Agregar restricciones de integridad.
+
+Utilizar migraciones SQL separadas por módulos.
+
+No crear una base de datos improvisada en memoria ni almacenar los datos principales exclusivamente en localStorage.
+
+La información debe persistir en Supabase.
+
+---
+
+# 21. SEGURIDAD Y POLÍTICAS RLS
+
+Este punto es obligatorio.
+
+Habilitar Row Level Security en todas las tablas expuestas.
+
+Reglas mínimas:
+
+- Productos aprobados: lectura pública.
+- Productos pendientes: propietario y moderadores autorizados.
+- Perfiles: lectura de información pública autorizada.
+- Teléfono y correo: información privada.
+- Usuarios: modifican únicamente sus propios datos permitidos.
+- Roles: no pueden ser modificados por usuarios comunes.
+- Solicitudes: acceso de los participantes.
+- Match: acceso de los participantes.
+- Conversaciones: acceso exclusivo de los participantes.
+- Mensajes: acceso exclusivo de los participantes.
+- Evaluaciones: solo después de operaciones finalizadas.
+- Denuncias: denunciante y moderadores autorizados.
+- Registros administrativos: solo administradores autorizados.
+- Notificaciones: solamente su destinatario.
+
+No confiar únicamente en las restricciones visuales del frontend.
+
+Todas las operaciones importantes deben validar permisos en el backend.
+
+Nunca colocar claves secretas, contraseñas de servicio ni claves service_role en el código del navegador.
+
+Implementar validaciones para impedir:
+- Doble reserva.
+- Autoasignación de roles.
+- Solicitudes sobre productos propios.
+- Intercambios con productos no aprobados.
+- Mensajes de usuarios ajenos a una conversación.
+- Evaluaciones duplicadas.
+- Confirmaciones falsas.
+- Manipulación del árbol circular.
+- Alteración de operaciones finalizadas.
+
+---
+
+# 22. PROTECCIÓN DE USUARIOS Y PRODUCTOS
+
+Crear reglas comunitarias y políticas de publicación.
+
+No permitir publicaciones de:
+- Armas.
+- Drogas.
+- Sustancias peligrosas.
+- Medicamentos de uso restringido.
+- Alimentos vencidos o inseguros.
+- Productos robados o falsificados.
+- Animales.
+- Objetos que puedan representar un riesgo.
+- Otros productos prohibidos por la política comunitaria.
+
+Permitir denunciar publicaciones y usuarios.
+
+La administración debe poder suspender temporalmente publicaciones o cuentas mientras se revisan denuncias.
+
+No mostrar domicilios particulares ni información sensible.
+
+Incorporar términos de uso, política de privacidad y reglas comunitarias.
+
+---
+
+# 23. EXPERIENCIA DE USUARIO Y NAVEGACIÓN
+
+### Pantalla de bienvenida
+
+Mostrar:
+
+- Logotipo.
+- Eslogan.
+- Descripción.
+- Botón Crear cuenta.
+- Botón Iniciar sesión.
+- Acceso a explorar productos aprobados.
+
+### Inicio de usuario
+
+Mostrar accesos visuales a:
+
+- Explorar.
+- Publicar.
+- Mis publicaciones.
+- Mis Match.
+- Mis intercambios.
+- Mi Árbol.
+- Impacto Circular.
+- Centro Educativo.
+- Mi perfil.
+
+### Navegación móvil
+
+Barra inferior con:
+
+- Inicio.
+- Explorar.
+- Publicar.
+- Match.
+- Perfil.
+
+La administración debe quedar fuera de la navegación normal.
+
+### Escritorio
+
+Utilizar una navegación lateral o superior según el diseño más conveniente.
+
+Toda la aplicación debe adaptarse a teléfonos, tabletas y computadores.
+
+---
+
+# 24. PWA Y PUBLICACIÓN
+
+La aplicación debe poder instalarse como PWA.
+
+Implementar:
+
+- Manifest.
+- Iconos.
+- Nombre de aplicación.
+- Color de tema.
+- Pantalla de inicio.
+- Service Worker.
+- Estrategia de actualización.
+- Caché de recursos estáticos.
+- Experiencia de carga.
+- Diseño móvil.
+
+No almacenar información privada sensible en caché pública.
+
+No permitir que el modo offline genere confirmaciones de intercambio o aprobaciones sin conexión con el servidor.
+
+Preparar la aplicación para desplegarse en Vercel o un servicio compatible.
+
+---
+
+# 25. ESTRUCTURA DE CARPETAS
+
+Mantener una estructura profesional semejante a esta:
+
+policircular/
+├── public/
+│   ├── icons/
+│   ├── images/
+│   └── manifest.webmanifest
+├── src/
+│   ├── assets/
+│   ├── components/
+│   ├── modules/
+│   │   ├── auth/
+│   │   ├── profile/
+│   │   ├── products/
+│   │   ├── categories/
+│   │   ├── explore/
+│   │   ├── matching/
+│   │   ├── chat/
+│   │   ├── exchanges/
+│   │   ├── reviews/
+│   │   ├── circular-tree/
+│   │   ├── impact/
+│   │   ├── education/
+│   │   ├── notifications/
+│   │   └── administration/
+│   ├── pages/
+│   ├── layouts/
+│   ├── hooks/
+│   ├── services/
+│   ├── context/
+│   ├── types/
+│   ├── utils/
+│   ├── routes/
+│   ├── styles/
+│   ├── App.tsx
+│   └── main.tsx
+├── supabase/
+│   ├── migrations/
+│   └── seed.sql
+├── tests/
+├── .env.example
+├── .gitignore
+├── package.json
+├── vite.config.ts
+└── README.md
+
+Puedes mejorar la estructura si existe una razón técnica, pero debes mantener la separación por módulos.
+
+---
+
+# 26. DATOS INICIALES
+
+Preparar datos iniciales para el piloto de Castro.
+
+Comuna:
+
+Castro, Región de Los Lagos, Chile.
+
+Crear las categorías:
+
+- Ropa y calzado.
+- Muebles.
+- Libros y educación.
+- Tecnología.
+- Electrodomésticos.
+- Herramientas.
+- Juguetes.
+- Deportes.
+- Hogar y jardín.
+- Materiales reutilizables.
+- Otros.
+
+Preparar los sectores como datos administrables.
+
+No inventar límites geográficos ni nombres de sectores que no hayan sido validados localmente.
+
+Crear insignias iniciales para el árbol circular.
+
+No crear usuarios administradores ficticios ni contraseñas predeterminadas.
+
+---
+
+# 27. REGLAS DE DESARROLLO
+
+Debes cumplir estrictamente estas instrucciones:
+
+1. No crear únicamente una interfaz visual.
+2. No utilizar botones decorativos que no hagan nada.
+3. No simular una conexión con Supabase.
+4. No almacenar información crítica solamente en el navegador.
+5. No dejar enlaces de navegación sin destino.
+6. No utilizar datos ficticios como si fueran registros reales.
+7. No exponer información privada.
+8. No permitir que usuarios normales accedan a administración.
+9. No implementar operaciones monetarias.
+10. No eliminar módulos ya desarrollados para simplificar el proyecto.
+11. No reemplazar funciones existentes por versiones incompletas.
+12. No duplicar componentes o servicios innecesariamente.
+13. Mantener consistencia visual en toda la aplicación.
+14. Mantener los datos persistentes.
+15. Documentar las modificaciones realizadas.
+
+Si una funcionalidad necesita credenciales externas, configura la integración y explica claramente qué credenciales faltan. No inventes credenciales ni afirmes que una conexión está operativa si no se ha probado.
+
+Si una operación crítica no está implementada de manera segura, no simules que funciona.
+
+---
+
+# 28. MÉTODO DE CONSTRUCCIÓN
+
+Construye la aplicación por fases, pero conserva una arquitectura preparada para todos los módulos.
+
+### FASE 1: FUNDACIÓN
+
+- Crear estructura React.
+- Configurar TypeScript.
+- Configurar diseño visual.
+- Crear navegación.
+- Crear PWA.
+- Configurar Supabase.
+- Crear registro e inicio de sesión.
+- Crear perfiles.
+- Crear migraciones iniciales.
+- Crear datos iniciales de Castro.
+
+### FASE 2: PRODUCTOS Y MODERACIÓN
+
+- Publicación.
+- Fotografías.
+- Categorías.
+- Estados.
+- Catálogo.
+- Filtros.
+- Moderación obligatoria.
+- Panel administrativo.
+
+### FASE 3: INTERESES Y MATCH
+
+- Deslizamiento.
+- Favoritos.
+- Solicitudes.
+- Propuestas de intercambio.
+- Aceptación y rechazo.
+- Reservas transaccionales.
+- Creación de Match.
+
+### FASE 4: COMUNICACIÓN Y ENTREGAS
+
+- Chat en tiempo real.
+- Coordinación.
+- Confirmaciones bilaterales.
+- Cancelaciones.
+- Disputas.
+
+### FASE 5: REPUTACIÓN Y ÁRBOL
+
+- Evaluaciones.
+- Reputación.
+- Logros.
+- Árbol circular.
+- Actualizaciones automáticas.
+
+### FASE 6: EDUCACIÓN E IMPACTO
+
+- Centro educativo.
+- Estadísticas.
+- Indicadores ambientales.
+- Informes.
+- Insignias institucionales.
+
+### FASE 7: PRUEBAS Y DESPLIEGUE
+
+- Pruebas de navegación.
+- Pruebas de autenticación.
+- Pruebas RLS.
+- Pruebas de publicación.
+- Pruebas de moderación.
+- Pruebas de Match.
+- Pruebas de chat.
+- Pruebas de permisos.
+- Pruebas móviles.
+- Compilación.
+- Despliegue.
+
+---
+
+# 29. CRITERIOS DE ACEPTACIÓN
+
+La aplicación no se considerará terminada hasta comprobar lo siguiente:
+
+- Una persona puede registrarse.
+- Puede iniciar y cerrar sesión.
+- Puede completar su perfil.
+- Puede publicar un producto.
+- La publicación queda pendiente.
+- Un moderador puede aprobarla.
+- Solo entonces aparece públicamente.
+- Otro usuario puede mostrar interés.
+- Puede enviar una solicitud.
+- El propietario puede aceptarla.
+- Se genera un Match.
+- Se crea un chat privado.
+- Se puede coordinar la entrega.
+- Ambas partes pueden confirmar.
+- La operación se finaliza correctamente.
+- Se habilitan evaluaciones.
+- Se actualiza el árbol circular.
+- Se registra el impacto cuando hay datos válidos.
+- La administración respeta los roles.
+- Las políticas RLS impiden accesos no autorizados.
+- La aplicación puede instalarse como PWA.
+
+Si alguna de estas funciones no está desarrollada, debe quedar identificada como pendiente, nunca presentarse como terminada.
+
+---
+
+# 30. INSTRUCCIÓN FINAL PARA GOOGLE AI STUDIO
+
+Comienza construyendo PoliCircular como un proyecto de software real.
+
+Primero analiza la arquitectura y crea los archivos necesarios. Después implementa la interfaz y las conexiones de backend.
+
+No respondas solamente explicando cómo se podría desarrollar.
+
+Debes crear y modificar los archivos del proyecto.
+
+Prioriza entregar una primera versión ejecutable con:
+
+1. Identidad visual completa.
+2. Navegación funcional.
+3. Registro e inicio de sesión.
+4. Conexión real con Supabase.
+5. Perfil de usuario.
+6. Publicación de productos.
+7. Catálogo de productos aprobados.
+8. Moderación obligatoria.
+9. Panel administrativo protegido.
+10. Configuración PWA.
+11. Migraciones SQL.
+12. Políticas RLS.
+13. Datos iniciales de Castro.
+14. README con instrucciones de instalación y despliegue.
+
+Al finalizar cada fase:
+
+- Indica los archivos creados.
+- Indica los archivos modificados.
+- Explica qué funcionalidades están operativas.
+- Explica qué integraciones requieren configuración.
+- Informa los errores detectados.
+- Ejecuta las comprobaciones disponibles.
+- No elimines el trabajo realizado anteriormente.
+
+**REGLA DE CONTINUIDAD DEL PROYECTO:**
+
+PoliCircular es un proyecto de desarrollo continuo. Cada nueva instrucción debe interpretarse como una modificación o ampliación de la versión existente, no como una autorización para comenzar de cero.
+
+Antes de modificar archivos, revisa la estructura y el código existentes. Conserva las funcionalidades operativas, las decisiones de arquitectura, la identidad visual y la información persistente.
+
+Si una modificación requiere alterar la base de datos, crea una nueva migración SQL en lugar de borrar y reconstruir las tablas existentes.
+
+El objetivo final es disponer de una plataforma comunitaria de economía circular, profesional, segura, escalable y funcional, nacida en Castro y preparada para extenderse a todo Chiloé y Chile.
+
+COMIENZA AHORA CON LA FASE 1 Y CONSTRUYE EL PROYECTO REAL.

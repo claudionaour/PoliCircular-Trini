@@ -1,0 +1,548 @@
+{
+  "entities": {
+    "Commune": {
+      "title": "Commune",
+      "description": "Comuna territorial habilitable (piloto Castro, Chiloé).",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "name": { "type": "string", "minLength": 2, "maxLength": 100 },
+        "region": { "type": "string", "minLength": 2, "maxLength": 100 },
+        "country": { "type": "string", "minLength": 2, "maxLength": 60 },
+        "timezone": { "type": "string", "minLength": 3, "maxLength": 60 },
+        "latitude": { "type": "number" },
+        "longitude": { "type": "number" },
+        "is_active": { "type": "boolean" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "region", "country", "timezone", "is_active", "created_at"]
+    },
+    "Sector": {
+      "title": "Sector",
+      "description": "Sector aproximado administrable dentro de una comuna.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "commune_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "name": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "description": { "type": "string", "maxLength": 300 },
+        "approx_lat": { "type": "number" },
+        "approx_lng": { "type": "number" },
+        "is_active": { "type": "boolean" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "commune_id", "name", "is_active", "created_at"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "Categoría oficial de productos con peso referencial estimado.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "slug": { "type": "string", "maxLength": 80, "pattern": "^[a-z0-9\\-]+$" },
+        "name": { "type": "string", "minLength": 2, "maxLength": 80 },
+        "description": { "type": "string", "maxLength": 300 },
+        "icon_name": { "type": "string", "maxLength": 50 },
+        "estimated_weight_kg": { "type": "number" },
+        "sort_order": { "type": "integer" },
+        "is_active": { "type": "boolean" }
+      },
+      "required": ["id", "slug", "name", "icon_name", "estimated_weight_kg", "sort_order", "is_active"]
+    },
+    "EducationalInstitution": {
+      "title": "EducationalInstitution",
+      "description": "Establecimiento educacional verificado en la red circular.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "name": { "type": "string", "minLength": 3, "maxLength": 160 },
+        "institution_code": { "type": "string", "maxLength": 60 },
+        "commune_id": { "type": "string", "maxLength": 128 },
+        "commune_name": { "type": "string", "maxLength": 100 },
+        "sector_id": { "type": "string", "maxLength": 128 },
+        "responsible_name": { "type": "string", "minLength": 3, "maxLength": 120 },
+        "badge_level": { "type": "string", "enum": ["none", "escuela_circular", "curso_reutilizador", "comunidad_sustentable", "embajador_circular"] },
+        "is_verified": { "type": "boolean" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "responsible_name", "badge_level", "is_verified", "created_at"]
+    },
+    "UserPublicProfile": {
+      "title": "UserPublicProfile",
+      "description": "Perfil comunitario público sin PII (sin correo, teléfono ni dirección).",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "full_name": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "username": { "type": "string", "minLength": 3, "maxLength": 60, "pattern": "^[a-zA-Z0-9_.\\-]+$" },
+        "avatar_url": { "type": "string", "maxLength": 600 },
+        "bio": { "type": "string", "maxLength": 500 },
+        "commune_id": { "type": "string", "maxLength": 128 },
+        "commune_name": { "type": "string", "maxLength": 100 },
+        "commune_region": { "type": "string", "maxLength": 100 },
+        "sector_id": { "type": "string", "maxLength": 128 },
+        "sector_name": { "type": "string", "maxLength": 120 },
+        "account_type": { "type": "string", "enum": ["individual", "organization", "educational"] },
+        "institution_id": { "type": "string", "maxLength": 128 },
+        "institution_name": { "type": "string", "maxLength": 160 },
+        "institution_description": { "type": "string", "maxLength": 500 },
+        "responsible_person": { "type": "string", "maxLength": 120 },
+        "institutional_code": { "type": "string", "maxLength": 60 },
+        "is_minor_supervised": { "type": "boolean" },
+        "guardian_authorization_note": { "type": "string", "maxLength": 240 },
+        "is_suspended": { "type": "boolean" },
+        "suspension_reason": { "type": "string", "maxLength": 300 },
+        "reputation_avg": { "type": "number" },
+        "reputation_count": { "type": "integer" },
+        "last_review_id": { "type": "string", "maxLength": 260 },
+        "terms_accepted_at": { "type": "string", "format": "date-time" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "full_name", "username", "account_type", "is_minor_supervised", "is_suspended", "reputation_avg", "reputation_count", "created_at", "updated_at"]
+    },
+    "UserPrivateContact": {
+      "title": "UserPrivateContact",
+      "description": "PII aislada por usuario (correo privado, teléfono privado y token FCM).",
+      "type": "object",
+      "properties": {
+        "user_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "private_email": { "type": "string", "maxLength": 200 },
+        "private_phone": { "type": "string", "maxLength": 40 },
+        "fcm_token": { "type": "string", "maxLength": 512 },
+        "updated_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["user_id", "updated_at"]
+    },
+    "UserRoleAssignment": {
+      "title": "UserRoleAssignment",
+      "description": "Roles RBAC asignados exclusivamente por super_admin o backend.",
+      "type": "object",
+      "properties": {
+        "user_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "roles": { "type": "array" },
+        "assigned_by": { "type": "string", "maxLength": 128 },
+        "updated_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["user_id", "roles", "updated_at"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Publicación comunitaria de regalo gratuito o intercambio sin dinero.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "owner_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "category_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "title": { "type": "string", "minLength": 3, "maxLength": 120 },
+        "description": { "type": "string", "minLength": 10, "maxLength": 2000 },
+        "condition": { "type": "string", "enum": ["new", "good", "needs_repair", "for_recycling"] },
+        "modality": { "type": "string", "enum": ["gift", "exchange"] },
+        "desired_exchange_items": { "type": "string", "maxLength": 500 },
+        "total_quantity": { "type": "integer" },
+        "available_quantity": { "type": "integer" },
+        "reserved_quantity": { "type": "integer" },
+        "commune_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "sector_id": { "type": "string", "maxLength": 128 },
+        "delivery_method": { "type": "string", "minLength": 4, "maxLength": 120 },
+        "status": { "type": "string", "enum": ["draft", "pending", "approved", "reserved", "in_delivery", "completed", "rejected", "suspended", "archived", "expired"] },
+        "moderation_notes": { "type": "string", "maxLength": 500 },
+        "moderated_by": { "type": "string", "maxLength": 128 },
+        "moderated_at": { "type": "string", "format": "date-time" },
+        "sync_exchange_id": { "type": "string", "maxLength": 128 },
+        "expires_at": { "type": "string", "format": "date-time" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "owner_id", "category_id", "title", "description", "condition", "modality", "total_quantity", "available_quantity", "reserved_quantity", "commune_id", "delivery_method", "status", "created_at", "updated_at"]
+    },
+    "ProductImage": {
+      "title": "ProductImage",
+      "description": "Metadatos de fotografía asociada a una publicación.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "product_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "owner_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "storage_path": { "type": "string", "minLength": 5, "maxLength": 400 },
+        "public_url": { "type": "string", "minLength": 8, "maxLength": 1000 },
+        "is_primary": { "type": "boolean" },
+        "sort_order": { "type": "integer" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "product_id", "owner_id", "storage_path", "public_url", "is_primary", "sort_order"]
+    },
+    "ProductInterest": {
+      "title": "ProductInterest",
+      "description": "Registro de interés, favorito o descarte de un usuario sobre un producto.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 260, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "product_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "user_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "decision": { "type": "string", "enum": ["interested", "discarded", "favorite"] },
+        "updated_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "product_id", "user_id", "decision", "updated_at"]
+    },
+    "MatchRequest": {
+      "title": "MatchRequest",
+      "description": "Solicitud formal enviada al oferente para regalo o intercambio.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "target_product_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "requester_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "owner_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "modality": { "type": "string", "enum": ["gift", "exchange"] },
+        "offered_product_id": { "type": "string", "maxLength": 128 },
+        "requested_quantity": { "type": "integer" },
+        "message": { "type": "string", "maxLength": 500 },
+        "status": { "type": "string", "enum": ["pending", "accepted", "rejected", "chat_requested", "cancelled"] },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "target_product_id", "requester_id", "owner_id", "modality", "requested_quantity", "status", "created_at"]
+    },
+    "MatchRecord": {
+      "title": "MatchRecord",
+      "description": "Match aceptado con reserva de unidades.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "request_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "target_product_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "offered_product_id": { "type": "string", "maxLength": 128 },
+        "owner_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "requester_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "modality": { "type": "string", "enum": ["gift", "exchange"] },
+        "quantity_reserved": { "type": "integer" },
+        "status": { "type": "string", "enum": ["active", "completed", "cancelled", "disputed"] },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "request_id", "target_product_id", "owner_id", "requester_id", "modality", "quantity_reserved", "status", "created_at"]
+    },
+    "Conversation": {
+      "title": "Conversation",
+      "description": "Canal privado asociado a un Match aceptado.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "match_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "participant_a": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "participant_b": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "is_blocked": { "type": "boolean" },
+        "blocked_by": { "type": "string", "maxLength": 128 },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "match_id", "participant_a", "participant_b", "is_blocked", "created_at"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Mensaje privado dentro de una conversación de Match.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "conversation_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "participant_a": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "participant_b": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "sender_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "body": { "type": "string", "minLength": 1, "maxLength": 1500 },
+        "is_read": { "type": "boolean" },
+        "read_at": { "type": "string", "format": "date-time" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "conversation_id", "participant_a", "participant_b", "sender_id", "body", "is_read", "created_at"]
+    },
+    "Exchange": {
+      "title": "Exchange",
+      "description": "Coordinación y seguimiento de entrega bilateral.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "match_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "owner_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "requester_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "status": { "type": "string", "enum": ["pending", "coordinating", "delivery_agreed", "delivered_pending_confirm", "completed", "cancelled", "disputed"] },
+        "proposed_date": { "type": "string", "maxLength": 40 },
+        "proposed_time_slot": { "type": "string", "maxLength": 60 },
+        "meeting_point_label": { "type": "string", "maxLength": 200 },
+        "meeting_point_lat": { "type": "number" },
+        "meeting_point_lng": { "type": "number" },
+        "proposed_by": { "type": "string", "maxLength": 128 },
+        "cancelled_by": { "type": "string", "maxLength": 128 },
+        "cancellation_reason": { "type": "string", "maxLength": 300 },
+        "completed_at": { "type": "string", "format": "date-time" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "match_id", "owner_id", "requester_id", "status", "created_at"]
+    },
+    "ExchangeConfirmation": {
+      "title": "ExchangeConfirmation",
+      "description": "Confirmación individual de entrega realizada por una de las partes.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 260, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "exchange_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "user_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "owner_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "requester_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "confirmed_at": { "type": "string", "format": "date-time" },
+        "notes": { "type": "string", "maxLength": 300 },
+        "measured_weight_kg": { "type": "number" }
+      },
+      "required": ["id", "exchange_id", "user_id", "owner_id", "requester_id", "confirmed_at"]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "Evaluación posterior a una operación completada por ambas partes.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 260, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "exchange_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "reviewer_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "reviewed_user_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "rating_compliance": { "type": "integer" },
+        "rating_punctuality": { "type": "integer" },
+        "rating_condition": { "type": "integer" },
+        "rating_communication": { "type": "integer" },
+        "rating_respect": { "type": "integer" },
+        "overall_rating": { "type": "number" },
+        "comment": { "type": "string", "maxLength": 500 },
+        "is_flagged": { "type": "boolean" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "exchange_id", "reviewer_id", "reviewed_user_id", "rating_compliance", "rating_punctuality", "rating_condition", "rating_communication", "rating_respect", "overall_rating", "is_flagged", "created_at"]
+    },
+    "Report": {
+      "title": "Report",
+      "description": "Denuncia comunitaria para revisión por moderadores.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "reporter_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "target_type": { "type": "string", "enum": ["product", "user", "conversation", "review", "exchange"] },
+        "target_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "reason_category": { "type": "string", "minLength": 3, "maxLength": 160 },
+        "description": { "type": "string", "minLength": 10, "maxLength": 1000 },
+        "status": { "type": "string", "enum": ["open", "under_review", "resolved", "dismissed"] },
+        "resolution_notes": { "type": "string", "maxLength": 600 },
+        "resolved_by": { "type": "string", "maxLength": 128 },
+        "resolved_at": { "type": "string", "format": "date-time" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "reporter_id", "target_type", "target_id", "reason_category", "description", "status", "created_at"]
+    },
+    "ModerationLog": {
+      "title": "ModerationLog",
+      "description": "Bitácora inmutable de acciones de moderación y administración.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "actor_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "target_type": { "type": "string", "maxLength": 40 },
+        "target_id": { "type": "string", "maxLength": 128 },
+        "action": { "type": "string", "maxLength": 80 },
+        "previous_status": { "type": "string", "maxLength": 40 },
+        "new_status": { "type": "string", "maxLength": 40 },
+        "notes": { "type": "string", "maxLength": 600 },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "actor_id", "target_type", "target_id", "action", "created_at"]
+    },
+    "Achievement": {
+      "title": "Achievement",
+      "description": "Catálogo oficial de insignias circulares.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "code": { "type": "string", "maxLength": 80 },
+        "name": { "type": "string", "maxLength": 120 },
+        "description": { "type": "string", "maxLength": 300 },
+        "category": { "type": "string", "enum": ["tree", "milestone", "education"] },
+        "required_operations": { "type": "integer" },
+        "icon_name": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["id", "code", "name", "description", "category", "required_operations", "icon_name"]
+    },
+    "UserAchievement": {
+      "title": "UserAchievement",
+      "description": "Insignia desbloqueada por un usuario tras operaciones verificadas.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 260, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "user_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "achievement_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "exchange_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "unlocked_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "user_id", "achievement_id", "exchange_id", "unlocked_at"]
+    },
+    "UserTreeProgress": {
+      "title": "UserTreeProgress",
+      "description": "Progreso del Árbol Circular basado solo en entregas confirmadas.",
+      "type": "object",
+      "properties": {
+        "user_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "completed_operations": { "type": "integer" },
+        "completed_gifts": { "type": "integer" },
+        "completed_exchanges": { "type": "integer" },
+        "current_stage": { "type": "string", "enum": ["semilla", "brote", "arbol_joven", "arbol_desarrollado", "arbol_frutal"] },
+        "last_exchange_id": { "type": "string", "maxLength": 128 },
+        "updated_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["user_id", "completed_operations", "completed_gifts", "completed_exchanges", "current_stage", "updated_at"]
+    },
+    "ImpactRecord": {
+      "title": "ImpactRecord",
+      "description": "Registro ambiental verificable separando peso medido y peso estimado.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "exchange_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "product_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "category_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "commune_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "sector_id": { "type": "string", "maxLength": 128 },
+        "modality": { "type": "string", "enum": ["gift", "exchange"] },
+        "quantity": { "type": "integer" },
+        "weight_kg": { "type": "number" },
+        "weight_type": { "type": "string", "enum": ["estimated", "measured"] },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "exchange_id", "product_id", "category_id", "commune_id", "modality", "quantity", "weight_kg", "weight_type", "created_at"]
+    },
+    "AppNotification": {
+      "title": "AppNotification",
+      "description": "Notificación privada en tiempo real para un usuario.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "user_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "event_type": { "type": "string", "maxLength": 60 },
+        "title": { "type": "string", "minLength": 2, "maxLength": 140 },
+        "body": { "type": "string", "minLength": 2, "maxLength": 500 },
+        "link_path": { "type": "string", "maxLength": 200 },
+        "is_read": { "type": "boolean" },
+        "read_at": { "type": "string", "format": "date-time" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "user_id", "event_type", "title", "body", "is_read", "created_at"]
+    },
+    "EducationProgress": {
+      "title": "EducationProgress",
+      "description": "Progreso de módulos y cuestionarios en Aprendamos a Circular.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 260, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "user_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "module_slug": { "type": "string", "maxLength": 80, "pattern": "^[a-z0-9\\-]+$" },
+        "quiz_score": { "type": "integer" },
+        "completed_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "user_id", "module_slug", "quiz_score", "completed_at"]
+    }
+  },
+  "firestore": {
+    "/communes/{communeId}": {
+      "schema": { "$ref": "#/entities/Commune" },
+      "description": "Comunas territoriales administrables."
+    },
+    "/sectors/{sectorId}": {
+      "schema": { "$ref": "#/entities/Sector" },
+      "description": "Sectores referenciales aproximados por comuna."
+    },
+    "/categories/{categoryId}": {
+      "schema": { "$ref": "#/entities/Category" },
+      "description": "Categorías oficiales de productos."
+    },
+    "/educational_institutions/{institutionId}": {
+      "schema": { "$ref": "#/entities/EducationalInstitution" },
+      "description": "Establecimientos educacionales registrados."
+    },
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserPublicProfile" },
+      "description": "Perfiles públicos comunitarios sin PII."
+    },
+    "/users/{userId}/private/{contactDoc}": {
+      "schema": { "$ref": "#/entities/UserPrivateContact" },
+      "description": "PII aislada: correo, teléfono y token FCM."
+    },
+    "/user_roles/{userId}": {
+      "schema": { "$ref": "#/entities/UserRoleAssignment" },
+      "description": "Asignación protegida de roles RBAC."
+    },
+    "/products/{productId}": {
+      "schema": { "$ref": "#/entities/Product" },
+      "description": "Publicaciones de productos para regalo o intercambio."
+    },
+    "/product_images/{imageId}": {
+      "schema": { "$ref": "#/entities/ProductImage" },
+      "description": "Imágenes asociadas a productos."
+    },
+    "/product_interests/{interestId}": {
+      "schema": { "$ref": "#/entities/ProductInterest" },
+      "description": "Intereses, favoritos y descartes por usuario."
+    },
+    "/match_requests/{requestId}": {
+      "schema": { "$ref": "#/entities/MatchRequest" },
+      "description": "Solicitudes de regalo o intercambio."
+    },
+    "/matches/{matchId}": {
+      "schema": { "$ref": "#/entities/MatchRecord" },
+      "description": "Matches aceptados con reserva de unidades."
+    },
+    "/conversations/{conversationId}": {
+      "schema": { "$ref": "#/entities/Conversation" },
+      "description": "Chats privados entre participantes de un Match."
+    },
+    "/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/Message" },
+      "description": "Mensajes en tiempo real de conversaciones."
+    },
+    "/exchanges/{exchangeId}": {
+      "schema": { "$ref": "#/entities/Exchange" },
+      "description": "Coordinación y estado de entrega de intercambios/regalos."
+    },
+    "/exchange_confirmations/{confirmationId}": {
+      "schema": { "$ref": "#/entities/ExchangeConfirmation" },
+      "description": "Confirmación bilateral de entrega."
+    },
+    "/reviews/{reviewId}": {
+      "schema": { "$ref": "#/entities/Review" },
+      "description": "Evaluaciones tras operaciones completadas."
+    },
+    "/reports/{reportId}": {
+      "schema": { "$ref": "#/entities/Report" },
+      "description": "Denuncias enviadas para moderación."
+    },
+    "/moderation_logs/{logId}": {
+      "schema": { "$ref": "#/entities/ModerationLog" },
+      "description": "Historial auditable de moderación."
+    },
+    "/achievements/{achievementId}": {
+      "schema": { "$ref": "#/entities/Achievement" },
+      "description": "Catálogo de insignias circulares."
+    },
+    "/user_achievements/{achievementRecordId}": {
+      "schema": { "$ref": "#/entities/UserAchievement" },
+      "description": "Insignias desbloqueadas por usuario."
+    },
+    "/user_tree_progress/{userId}": {
+      "schema": { "$ref": "#/entities/UserTreeProgress" },
+      "description": "Estado del Árbol Circular del usuario."
+    },
+    "/impact_records/{impactId}": {
+      "schema": { "$ref": "#/entities/ImpactRecord" },
+      "description": "Registros de impacto ambiental con separación entre peso medido y estimado."
+    },
+    "/notifications/{notificationId}": {
+      "schema": { "$ref": "#/entities/AppNotification" },
+      "description": "Notificaciones privadas de cada usuario."
+    },
+    "/education_progress/{progressId}": {
+      "schema": { "$ref": "#/entities/EducationProgress" },
+      "description": "Progreso educativo en Aprendamos a Circular."
+    }
+  }
+}

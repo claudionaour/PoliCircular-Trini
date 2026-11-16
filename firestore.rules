@@ -1,0 +1,1028 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // =========================================================================
+    // GLOBAL HELPERS (Zero-Trust Primitives)
+    // =========================================================================
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function isBootstrappedAdmin() {
+      return isVerifiedUser() && request.auth.token.email == 'naourclaudio@gmail.com';
+    }
+
+    function hasRole(role) {
+      return isVerifiedUser()
+        && exists(/databases/$(database)/documents/user_roles/$(request.auth.uid))
+        && (role in get(/databases/$(database)/documents/user_roles/$(request.auth.uid)).data.roles);
+    }
+
+    function isSuperAdmin() {
+      return isBootstrappedAdmin() || hasRole('super_admin');
+    }
+
+    function isAdmin() {
+      return isSuperAdmin() || hasRole('admin');
+    }
+
+    function isModerator() {
+      return isAdmin() || hasRole('moderator');
+    }
+
+    function optString(data, field, maxLen) {
+      return !(field in data) || data[field] == null || (data[field] is string && data[field].size() <= maxLen);
+    }
+
+    function optNumber(data, field) {
+      return !(field in data) || data[field] == null || (data[field] is number);
+    }
+
+    // =========================================================================
+    // VALIDATION BLUEPRINTS (Synchronized with firebase-blueprint.json)
+    // =========================================================================
+    function isValidCommune(data) {
+      return data.keys().hasAll(['id', 'name', 'region', 'country', 'timezone', 'is_active', 'created_at'])
+        && data.keys().hasOnly(['id', 'name', 'region', 'country', 'timezone', 'latitude', 'longitude', 'is_active', 'created_at', 'updated_at'])
+        && isValidId(data.id)
+        && data.name is string && data.name.size() >= 2 && data.name.size() <= 100
+        && data.region is string && data.region.size() >= 2 && data.region.size() <= 100
+        && data.country is string && data.country.size() >= 2 && data.country.size() <= 60
+        && data.timezone is string && data.timezone.size() >= 3 && data.timezone.size() <= 60
+        && optNumber(data, 'latitude')
+        && optNumber(data, 'longitude')
+        && data.is_active is bool
+        && data.created_at is timestamp;
+    }
+
+    function isValidSector(data) {
+      return data.keys().hasAll(['id', 'commune_id', 'name', 'is_active', 'created_at'])
+        && data.keys().hasOnly(['id', 'commune_id', 'name', 'description', 'approx_lat', 'approx_lng', 'is_active', 'created_at', 'updated_at'])
+        && isValidId(data.id)
+        && isValidId(data.commune_id)
+        && data.name is string && data.name.size() >= 2 && data.name.size() <= 120
+        && optString(data, 'description', 300)
+        && optNumber(data, 'approx_lat')
+        && optNumber(data, 'approx_lng')
+        && data.is_active is bool
+        && data.created_at is timestamp;
+    }
+
+    function isValidCategory(data) {
+      return data.keys().hasAll(['id', 'slug', 'name', 'icon_name', 'estimated_weight_kg', 'sort_order', 'is_active'])
+        && data.keys().hasOnly(['id', 'slug', 'name', 'description', 'icon_name', 'estimated_weight_kg', 'sort_order', 'is_active'])
+        && isValidId(data.id)
+        && data.slug is string && data.slug.size() >= 2 && data.slug.size() <= 80 && data.slug.matches('^[a-z0-9\\-]+$')
+        && data.name is string && data.name.size() >= 2 && data.name.size() <= 80
+        && optString(data, 'description', 300)
+        && data.icon_name is string && data.icon_name.size() >= 1 && data.icon_name.size() <= 50
+        && data.estimated_weight_kg is number && data.estimated_weight_kg >= 0
+        && data.sort_order is int
+        && data.is_active is bool;
+    }
+
+    function isValidInstitution(data) {
+      return data.keys().hasAll(['id', 'name', 'responsible_name', 'badge_level', 'is_verified', 'created_at'])
+        && data.keys().hasOnly(['id', 'name', 'institution_code', 'commune_id', 'commune_name', 'sector_id', 'responsible_name', 'badge_level', 'is_verified', 'created_at', 'updated_at'])
+        && isValidId(data.id)
+        && data.name is string && data.name.size() >= 3 && data.name.size() <= 160
+        && optString(data, 'institution_code', 60)
+        && optString(data, 'commune_id', 128)
+        && optString(data, 'commune_name', 100)
+        && optString(data, 'sector_id', 128)
+        && data.responsible_name is string && data.responsible_name.size() >= 3 && data.responsible_name.size() <= 120
+        && data.badge_level in ['none', 'escuela_circular', 'curso_reutilizador', 'comunidad_sustentable', 'embajador_circular']
+        && data.is_verified is bool
+        && data.created_at is timestamp;
+    }
+
+    function isValidUserPublic(data, userId) {
+      return data.keys().hasAll(['id', 'full_name', 'username', 'account_type', 'is_minor_supervised', 'is_suspended', 'reputation_avg', 'reputation_count', 'created_at', 'updated_at'])
+        && data.keys().hasOnly([
+          'id', 'full_name', 'username', 'avatar_url', 'bio', 'commune_id', 'commune_name', 'commune_region',
+          'sector_id', 'sector_name', 'account_type', 'institution_id', 'institution_name',
+          'institution_description', 'responsible_person', 'institutional_code',
+          'is_minor_supervised', 'guardian_authorization_note', 'is_suspended', 'suspension_reason',
+          'reputation_avg', 'reputation_count', 'last_review_id', 'terms_accepted_at', 'created_at', 'updated_at'
+        ])
+        && data.id == userId
+        && isValidId(data.id)
+        && data.full_name is string && data.full_name.size() >= 2 && data.full_name.size() <= 120
+        && data.username is string && data.username.size() >= 3 && data.username.size() <= 60 && data.username.matches('^[a-zA-Z0-9_.\\-]+$')
+        && optString(data, 'avatar_url', 600)
+        && optString(data, 'bio', 500)
+        && optString(data, 'commune_id', 128)
+        && optString(data, 'commune_name', 100)
+        && optString(data, 'commune_region', 100)
+        && optString(data, 'sector_id', 128)
+        && optString(data, 'sector_name', 120)
+        && data.account_type in ['individual', 'organization', 'educational']
+        && optString(data, 'institution_id', 128)
+        && optString(data, 'institution_name', 160)
+        && optString(data, 'institution_description', 500)
+        && optString(data, 'responsible_person', 120)
+        && optString(data, 'institutional_code', 60)
+        && data.is_minor_supervised is bool
+        && optString(data, 'guardian_authorization_note', 240)
+        && data.is_suspended is bool
+        && optString(data, 'suspension_reason', 300)
+        && data.reputation_avg is number && data.reputation_avg >= 0 && data.reputation_avg <= 5
+        && data.reputation_count is int && data.reputation_count >= 0
+        && optString(data, 'last_review_id', 260)
+        && data.created_at is timestamp
+        && data.updated_at is timestamp;
+    }
+
+    function isValidPrivateContact(data, userId) {
+      return data.keys().hasAll(['user_id', 'updated_at'])
+        && data.keys().hasOnly(['user_id', 'private_email', 'private_phone', 'fcm_token', 'updated_at'])
+        && data.user_id == userId
+        && isValidId(data.user_id)
+        && optString(data, 'private_email', 200)
+        && optString(data, 'private_phone', 40)
+        && optString(data, 'fcm_token', 512)
+        && data.updated_at is timestamp;
+    }
+
+    function isValidUserRoles(data, userId) {
+      return data.keys().hasAll(['user_id', 'roles', 'updated_at'])
+        && data.keys().hasOnly(['user_id', 'roles', 'assigned_by', 'updated_at'])
+        && data.user_id == userId
+        && isValidId(data.user_id)
+        && data.roles is list && data.roles.size() >= 1 && data.roles.size() <= 4
+        && data.roles[0] is string
+        && data.roles.hasOnly(['user', 'moderator', 'admin', 'super_admin'])
+        && optString(data, 'assigned_by', 128)
+        && data.updated_at is timestamp;
+    }
+
+    function isValidProduct(data, productId) {
+      return data.keys().hasAll([
+          'id', 'owner_id', 'category_id', 'title', 'description', 'condition', 'modality',
+          'total_quantity', 'available_quantity', 'reserved_quantity', 'commune_id',
+          'delivery_method', 'status', 'created_at', 'updated_at'
+        ])
+        && data.keys().hasOnly([
+          'id', 'owner_id', 'category_id', 'title', 'description', 'condition', 'modality',
+          'desired_exchange_items', 'total_quantity', 'available_quantity', 'reserved_quantity',
+          'commune_id', 'sector_id', 'delivery_method', 'status', 'moderation_notes',
+          'moderated_by', 'moderated_at', 'sync_exchange_id', 'expires_at', 'created_at', 'updated_at'
+        ])
+        && data.id == productId
+        && isValidId(data.id)
+        && isValidId(data.owner_id)
+        && isValidId(data.category_id)
+        && data.title is string && data.title.size() >= 3 && data.title.size() <= 120
+        && data.description is string && data.description.size() >= 10 && data.description.size() <= 2000
+        && data.condition in ['new', 'good', 'needs_repair', 'for_recycling']
+        && data.modality in ['gift', 'exchange']
+        && optString(data, 'desired_exchange_items', 500)
+        && data.total_quantity is int && data.total_quantity >= 1 && data.total_quantity <= 500
+        && data.available_quantity is int && data.available_quantity >= 0 && data.available_quantity <= data.total_quantity
+        && data.reserved_quantity is int && data.reserved_quantity >= 0 && data.reserved_quantity <= data.total_quantity
+        && isValidId(data.commune_id)
+        && optString(data, 'sector_id', 128)
+        && data.delivery_method is string && data.delivery_method.size() >= 4 && data.delivery_method.size() <= 120
+        && data.status in ['draft', 'pending', 'approved', 'reserved', 'in_delivery', 'completed', 'rejected', 'suspended', 'archived', 'expired']
+        && optString(data, 'moderation_notes', 500)
+        && optString(data, 'moderated_by', 128)
+        && optString(data, 'sync_exchange_id', 128)
+        && data.created_at is timestamp
+        && data.updated_at is timestamp;
+    }
+
+    function isValidProductImage(data, imageId) {
+      return data.keys().hasAll(['id', 'product_id', 'owner_id', 'storage_path', 'public_url', 'is_primary', 'sort_order'])
+        && data.keys().hasOnly(['id', 'product_id', 'owner_id', 'storage_path', 'public_url', 'is_primary', 'sort_order', 'created_at'])
+        && data.id == imageId
+        && isValidId(data.id)
+        && isValidId(data.product_id)
+        && isValidId(data.owner_id)
+        && data.storage_path is string && data.storage_path.size() >= 5 && data.storage_path.size() <= 400
+        && data.public_url is string && data.public_url.size() >= 8 && data.public_url.size() <= 1000
+        && data.is_primary is bool
+        && data.sort_order is int && data.sort_order >= 0 && data.sort_order <= 10;
+    }
+
+    function isValidProductInterest(data, interestId) {
+      return data.keys().hasAll(['id', 'product_id', 'user_id', 'decision', 'updated_at'])
+        && data.keys().hasOnly(['id', 'product_id', 'user_id', 'decision', 'updated_at'])
+        && data.id == interestId
+        && isValidId(data.product_id)
+        && isValidId(data.user_id)
+        && data.decision in ['interested', 'discarded', 'favorite']
+        && data.updated_at is timestamp;
+    }
+
+    function isValidMatchRequest(data, requestId) {
+      return data.keys().hasAll(['id', 'target_product_id', 'requester_id', 'owner_id', 'modality', 'requested_quantity', 'status', 'created_at'])
+        && data.keys().hasOnly(['id', 'target_product_id', 'requester_id', 'owner_id', 'modality', 'offered_product_id', 'requested_quantity', 'message', 'status', 'created_at', 'updated_at'])
+        && data.id == requestId
+        && isValidId(data.id)
+        && isValidId(data.target_product_id)
+        && isValidId(data.requester_id)
+        && isValidId(data.owner_id)
+        && data.requester_id != data.owner_id
+        && data.modality in ['gift', 'exchange']
+        && optString(data, 'offered_product_id', 128)
+        && data.requested_quantity is int && data.requested_quantity >= 1 && data.requested_quantity <= 500
+        && optString(data, 'message', 500)
+        && data.status in ['pending', 'accepted', 'rejected', 'chat_requested', 'cancelled']
+        && data.created_at is timestamp;
+    }
+
+    function isValidMatch(data, matchId) {
+      return data.keys().hasAll(['id', 'request_id', 'target_product_id', 'owner_id', 'requester_id', 'modality', 'quantity_reserved', 'status', 'created_at'])
+        && data.keys().hasOnly(['id', 'request_id', 'target_product_id', 'offered_product_id', 'owner_id', 'requester_id', 'modality', 'quantity_reserved', 'status', 'created_at', 'updated_at'])
+        && data.id == matchId
+        && isValidId(data.id)
+        && isValidId(data.request_id)
+        && isValidId(data.target_product_id)
+        && optString(data, 'offered_product_id', 128)
+        && isValidId(data.owner_id)
+        && isValidId(data.requester_id)
+        && data.owner_id != data.requester_id
+        && data.modality in ['gift', 'exchange']
+        && data.quantity_reserved is int && data.quantity_reserved >= 1 && data.quantity_reserved <= 500
+        && data.status in ['active', 'completed', 'cancelled', 'disputed']
+        && data.created_at is timestamp;
+    }
+
+    function isValidConversation(data, convId) {
+      return data.keys().hasAll(['id', 'match_id', 'participant_a', 'participant_b', 'is_blocked', 'created_at'])
+        && data.keys().hasOnly(['id', 'match_id', 'participant_a', 'participant_b', 'is_blocked', 'blocked_by', 'created_at', 'updated_at'])
+        && data.id == convId
+        && isValidId(data.id)
+        && isValidId(data.match_id)
+        && isValidId(data.participant_a)
+        && isValidId(data.participant_b)
+        && data.is_blocked is bool
+        && optString(data, 'blocked_by', 128)
+        && data.created_at is timestamp;
+    }
+
+    function isValidMessage(data, messageId) {
+      return data.keys().hasAll(['id', 'conversation_id', 'participant_a', 'participant_b', 'sender_id', 'body', 'is_read', 'created_at'])
+        && data.keys().hasOnly(['id', 'conversation_id', 'participant_a', 'participant_b', 'sender_id', 'body', 'is_read', 'read_at', 'created_at'])
+        && data.id == messageId
+        && isValidId(data.id)
+        && isValidId(data.conversation_id)
+        && isValidId(data.participant_a)
+        && isValidId(data.participant_b)
+        && isValidId(data.sender_id)
+        && data.body is string && data.body.size() >= 1 && data.body.size() <= 1500
+        && data.is_read is bool
+        && data.created_at is timestamp;
+    }
+
+    function isValidExchange(data, exchangeId) {
+      return data.keys().hasAll(['id', 'match_id', 'owner_id', 'requester_id', 'status', 'created_at'])
+        && data.keys().hasOnly([
+          'id', 'match_id', 'owner_id', 'requester_id', 'status', 'proposed_date',
+          'proposed_time_slot', 'meeting_point_label', 'meeting_point_lat', 'meeting_point_lng',
+          'proposed_by', 'cancelled_by', 'cancellation_reason', 'completed_at', 'created_at', 'updated_at'
+        ])
+        && data.id == exchangeId
+        && isValidId(data.id)
+        && isValidId(data.match_id)
+        && isValidId(data.owner_id)
+        && isValidId(data.requester_id)
+        && data.status in ['pending', 'coordinating', 'delivery_agreed', 'delivered_pending_confirm', 'completed', 'cancelled', 'disputed']
+        && optString(data, 'proposed_date', 40)
+        && optString(data, 'proposed_time_slot', 60)
+        && optString(data, 'meeting_point_label', 200)
+        && optNumber(data, 'meeting_point_lat')
+        && optNumber(data, 'meeting_point_lng')
+        && optString(data, 'proposed_by', 128)
+        && optString(data, 'cancelled_by', 128)
+        && optString(data, 'cancellation_reason', 300)
+        && data.created_at is timestamp;
+    }
+
+    function isValidExchangeConfirmation(data, confId) {
+      return data.keys().hasAll(['id', 'exchange_id', 'user_id', 'owner_id', 'requester_id', 'confirmed_at'])
+        && data.keys().hasOnly(['id', 'exchange_id', 'user_id', 'owner_id', 'requester_id', 'confirmed_at', 'notes', 'measured_weight_kg'])
+        && data.id == confId
+        && isValidId(data.exchange_id)
+        && isValidId(data.user_id)
+        && isValidId(data.owner_id)
+        && isValidId(data.requester_id)
+        && data.confirmed_at is timestamp
+        && optString(data, 'notes', 300)
+        && optNumber(data, 'measured_weight_kg');
+    }
+
+    function isValidReview(data, reviewId) {
+      return data.keys().hasAll([
+          'id', 'exchange_id', 'reviewer_id', 'reviewed_user_id',
+          'rating_compliance', 'rating_punctuality', 'rating_condition',
+          'rating_communication', 'rating_respect', 'overall_rating', 'is_flagged', 'created_at'
+        ])
+        && data.keys().hasOnly([
+          'id', 'exchange_id', 'reviewer_id', 'reviewed_user_id',
+          'rating_compliance', 'rating_punctuality', 'rating_condition',
+          'rating_communication', 'rating_respect', 'overall_rating', 'comment', 'is_flagged', 'created_at'
+        ])
+        && data.id == reviewId
+        && isValidId(data.exchange_id)
+        && isValidId(data.reviewer_id)
+        && isValidId(data.reviewed_user_id)
+        && data.reviewer_id != data.reviewed_user_id
+        && data.rating_compliance is int && data.rating_compliance >= 1 && data.rating_compliance <= 5
+        && data.rating_punctuality is int && data.rating_punctuality >= 1 && data.rating_punctuality <= 5
+        && data.rating_condition is int && data.rating_condition >= 1 && data.rating_condition <= 5
+        && data.rating_communication is int && data.rating_communication >= 1 && data.rating_communication <= 5
+        && data.rating_respect is int && data.rating_respect >= 1 && data.rating_respect <= 5
+        && data.overall_rating is number && data.overall_rating >= 1 && data.overall_rating <= 5
+        && optString(data, 'comment', 500)
+        && data.is_flagged is bool
+        && data.created_at is timestamp;
+    }
+
+    function isValidReport(data, reportId) {
+      return data.keys().hasAll(['id', 'reporter_id', 'target_type', 'target_id', 'reason_category', 'description', 'status', 'created_at'])
+        && data.keys().hasOnly(['id', 'reporter_id', 'target_type', 'target_id', 'reason_category', 'description', 'status', 'resolution_notes', 'resolved_by', 'resolved_at', 'created_at', 'updated_at'])
+        && data.id == reportId
+        && isValidId(data.id)
+        && isValidId(data.reporter_id)
+        && data.target_type in ['product', 'user', 'conversation', 'review', 'exchange']
+        && isValidId(data.target_id)
+        && data.reason_category is string && data.reason_category.size() >= 3 && data.reason_category.size() <= 160
+        && data.description is string && data.description.size() >= 10 && data.description.size() <= 1000
+        && data.status in ['open', 'under_review', 'resolved', 'dismissed']
+        && optString(data, 'resolution_notes', 600)
+        && optString(data, 'resolved_by', 128)
+        && data.created_at is timestamp;
+    }
+
+    function isValidModerationLog(data, logId) {
+      return data.keys().hasAll(['id', 'actor_id', 'target_type', 'target_id', 'action', 'created_at'])
+        && data.keys().hasOnly(['id', 'actor_id', 'target_type', 'target_id', 'action', 'previous_status', 'new_status', 'notes', 'created_at'])
+        && data.id == logId
+        && isValidId(data.id)
+        && isValidId(data.actor_id)
+        && data.target_type is string && data.target_type.size() >= 2 && data.target_type.size() <= 40
+        && data.target_id is string && data.target_id.size() >= 1 && data.target_id.size() <= 128
+        && data.action is string && data.action.size() >= 2 && data.action.size() <= 80
+        && optString(data, 'previous_status', 40)
+        && optString(data, 'new_status', 40)
+        && optString(data, 'notes', 600)
+        && data.created_at is timestamp;
+    }
+
+    function isValidAchievement(data, achId) {
+      return data.keys().hasAll(['id', 'code', 'name', 'description', 'category', 'required_operations', 'icon_name'])
+        && data.keys().hasOnly(['id', 'code', 'name', 'description', 'category', 'required_operations', 'icon_name'])
+        && data.id == achId
+        && isValidId(data.id)
+        && data.code is string && data.code.size() >= 2 && data.code.size() <= 80
+        && data.name is string && data.name.size() >= 2 && data.name.size() <= 120
+        && data.description is string && data.description.size() >= 2 && data.description.size() <= 300
+        && data.category in ['tree', 'milestone', 'education']
+        && data.required_operations is int && data.required_operations >= 1
+        && data.icon_name is string && data.icon_name.size() >= 1 && data.icon_name.size() <= 50;
+    }
+
+    function isValidUserAchievement(data, recId) {
+      return data.keys().hasAll(['id', 'user_id', 'achievement_id', 'exchange_id', 'unlocked_at'])
+        && data.keys().hasOnly(['id', 'user_id', 'achievement_id', 'exchange_id', 'unlocked_at'])
+        && data.id == recId
+        && isValidId(data.user_id)
+        && isValidId(data.achievement_id)
+        && isValidId(data.exchange_id)
+        && data.unlocked_at is timestamp;
+    }
+
+    function isValidTreeProgress(data, userId) {
+      return data.keys().hasAll(['user_id', 'completed_operations', 'completed_gifts', 'completed_exchanges', 'current_stage', 'updated_at'])
+        && data.keys().hasOnly(['user_id', 'completed_operations', 'completed_gifts', 'completed_exchanges', 'current_stage', 'last_exchange_id', 'updated_at'])
+        && data.user_id == userId
+        && isValidId(data.user_id)
+        && data.completed_operations is int && data.completed_operations >= 0
+        && data.completed_gifts is int && data.completed_gifts >= 0
+        && data.completed_exchanges is int && data.completed_exchanges >= 0
+        && data.current_stage in ['semilla', 'brote', 'arbol_joven', 'arbol_desarrollado', 'arbol_frutal']
+        && optString(data, 'last_exchange_id', 128)
+        && data.updated_at is timestamp;
+    }
+
+    function isValidImpactRecord(data, impactId) {
+      return data.keys().hasAll(['id', 'exchange_id', 'product_id', 'category_id', 'commune_id', 'modality', 'quantity', 'weight_kg', 'weight_type', 'created_at'])
+        && data.keys().hasOnly(['id', 'exchange_id', 'product_id', 'category_id', 'commune_id', 'sector_id', 'modality', 'quantity', 'weight_kg', 'weight_type', 'created_at'])
+        && data.id == impactId
+        && isValidId(data.id)
+        && isValidId(data.exchange_id)
+        && isValidId(data.product_id)
+        && isValidId(data.category_id)
+        && isValidId(data.commune_id)
+        && optString(data, 'sector_id', 128)
+        && data.modality in ['gift', 'exchange']
+        && data.quantity is int && data.quantity >= 1
+        && data.weight_kg is number && data.weight_kg >= 0
+        && data.weight_type in ['estimated', 'measured']
+        && data.created_at is timestamp;
+    }
+
+    function isValidNotification(data, notifId) {
+      return data.keys().hasAll(['id', 'user_id', 'event_type', 'title', 'body', 'is_read', 'created_at'])
+        && data.keys().hasOnly(['id', 'user_id', 'event_type', 'title', 'body', 'link_path', 'is_read', 'read_at', 'created_at'])
+        && data.id == notifId
+        && isValidId(data.id)
+        && isValidId(data.user_id)
+        && data.event_type is string && data.event_type.size() >= 2 && data.event_type.size() <= 60
+        && data.title is string && data.title.size() >= 2 && data.title.size() <= 140
+        && data.body is string && data.body.size() >= 2 && data.body.size() <= 500
+        && optString(data, 'link_path', 200)
+        && data.is_read is bool
+        && data.created_at is timestamp;
+    }
+
+    function isValidEducationProgress(data, progId) {
+      return data.keys().hasAll(['id', 'user_id', 'module_slug', 'quiz_score', 'completed_at'])
+        && data.keys().hasOnly(['id', 'user_id', 'module_slug', 'quiz_score', 'completed_at'])
+        && data.id == progId
+        && isValidId(data.user_id)
+        && data.module_slug is string && data.module_slug.size() >= 2 && data.module_slug.size() <= 80 && data.module_slug.matches('^[a-z0-9\\-]+$')
+        && data.quiz_score is int && data.quiz_score >= 0 && data.quiz_score <= 100
+        && data.completed_at is timestamp;
+    }
+
+    // =========================================================================
+    // CONNECTIVITY CHECK PING
+    // =========================================================================
+    match /test/{docId} {
+      allow get: if docId == 'connection';
+    }
+
+    // =========================================================================
+    // TERRITORIAL & CATALOG COLLECTIONS
+    // =========================================================================
+    match /communes/{communeId} {
+      allow get: if isValidId(communeId);
+      allow list: if resource.data.is_active is bool;
+      allow create: if isAdmin() && isValidId(communeId) && isValidCommune(incoming());
+      allow update: if isAdmin() && isValidId(communeId) && isValidCommune(incoming());
+      allow delete: if false;
+    }
+
+    match /sectors/{sectorId} {
+      allow get: if isValidId(sectorId);
+      allow list: if resource.data.is_active is bool;
+      allow create: if isAdmin() && isValidId(sectorId) && isValidSector(incoming())
+        && exists(/databases/$(database)/documents/communes/$(incoming().commune_id));
+      allow update: if isAdmin() && isValidId(sectorId) && isValidSector(incoming())
+        && incoming().commune_id == existing().commune_id;
+      allow delete: if false;
+    }
+
+    match /categories/{categoryId} {
+      allow get: if isValidId(categoryId);
+      allow list: if resource.data.is_active is bool;
+      allow create: if isAdmin() && isValidId(categoryId) && isValidCategory(incoming());
+      allow update: if isAdmin() && isValidId(categoryId) && isValidCategory(incoming());
+      allow delete: if false;
+    }
+
+    match /achievements/{achievementId} {
+      allow get: if isValidId(achievementId);
+      allow list: if resource.data.required_operations is int;
+      allow create, update: if isAdmin() && isValidId(achievementId) && isValidAchievement(incoming(), achievementId);
+      allow delete: if false;
+    }
+
+    match /educational_institutions/{institutionId} {
+      allow get: if isValidId(institutionId);
+      allow list: if resource.data.is_verified is bool;
+      allow create, update: if isAdmin() && isValidId(institutionId) && isValidInstitution(incoming());
+      allow delete: if false;
+    }
+
+    // =========================================================================
+    // USERS (PUBLIC PROFILE + ISOLATED PRIVATE PII + RBAC ROLES)
+    // =========================================================================
+    match /users/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin() || resource.data.is_suspended == false);
+      allow list: if resource.data.is_suspended == false || (isSignedIn() && resource.data.id == request.auth.uid) || isAdmin();
+      allow create: if isOwner(userId) && isValidId(userId)
+        && isValidUserPublic(incoming(), userId)
+        && incoming().is_suspended == false
+        && incoming().reputation_avg == 0
+        && incoming().reputation_count == 0
+        && incoming().created_at == request.time
+        && incoming().updated_at == request.time;
+      allow update: if isSignedIn() && isValidId(userId) && isValidUserPublic(incoming(), userId) && (
+        (
+          isAdmin()
+          && incoming().id == existing().id
+          && incoming().created_at == existing().created_at
+          && incoming().updated_at == request.time
+        ) || (
+          isOwner(userId)
+          && incoming().id == existing().id
+          && incoming().created_at == existing().created_at
+          && incoming().updated_at == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'full_name', 'bio', 'commune_id', 'commune_name', 'commune_region',
+            'sector_id', 'sector_name', 'avatar_url', 'institution_name',
+            'institution_description', 'responsible_person', 'institutional_code',
+            'terms_accepted_at', 'is_suspended', 'suspension_reason', 'updated_at'
+          ])
+          && (
+            !('is_suspended' in incoming().diff(existing()).affectedKeys())
+            || (existing().is_suspended == false && incoming().is_suspended == true)
+          )
+        ) || (
+          // Atomic reputation recalculation strictly bound to newly created verified review
+          isVerifiedUser()
+          && incoming().diff(existing()).affectedKeys().hasOnly(['reputation_avg', 'reputation_count', 'last_review_id', 'updated_at'])
+          && incoming().reputation_count == existing().reputation_count + 1
+          && isValidId(incoming().last_review_id)
+          && (!('last_review_id' in existing()) || incoming().last_review_id != existing().last_review_id)
+          && existsAfter(/databases/$(database)/documents/reviews/$(incoming().last_review_id))
+          && getAfter(/databases/$(database)/documents/reviews/$(incoming().last_review_id)).data.reviewed_user_id == userId
+          && getAfter(/databases/$(database)/documents/reviews/$(incoming().last_review_id)).data.reviewer_id == request.auth.uid
+          && incoming().updated_at == request.time
+        )
+      );
+      allow delete: if false;
+
+      // Pillar 6: PII Isolation (Private Email, Phone, FCM token)
+      match /private/{contactDoc} {
+        allow get: if isValidId(userId) && isValidId(contactDoc) && (isOwner(userId) || isAdmin());
+        allow list: if isOwner(userId) || isAdmin();
+        allow create, update: if (isOwner(userId) || isAdmin()) && isValidId(userId) && isValidId(contactDoc)
+          && isValidPrivateContact(incoming(), userId)
+          && incoming().updated_at == request.time;
+        allow delete: if isOwner(userId) || isAdmin();
+      }
+    }
+
+    match /user_roles/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if (isSignedIn() && resource.data.user_id == request.auth.uid) || isAdmin();
+      // Users CANNOT assign administrative roles to themselves
+      allow create, update: if isSuperAdmin() && isValidId(userId)
+        && isValidUserRoles(incoming(), userId)
+        && incoming().updated_at == request.time;
+      allow delete: if isSuperAdmin() && isValidId(userId);
+    }
+
+    // =========================================================================
+    // PRODUCTS & IMAGES (PRE-MODERATION ENFORCED)
+    // =========================================================================
+    match /products/{productId} {
+      allow get: if isValidId(productId) && (
+        resource.data.status == 'approved'
+        || (isSignedIn() && resource.data.owner_id == request.auth.uid)
+        || isModerator()
+      );
+      allow list: if resource.data.status == 'approved'
+        || (isSignedIn() && resource.data.owner_id == request.auth.uid)
+        || isModerator();
+
+      allow create: if isVerifiedUser() && isValidId(productId)
+        && isValidProduct(incoming(), productId)
+        && incoming().owner_id == request.auth.uid
+        && incoming().status == 'pending'
+        && incoming().available_quantity == incoming().total_quantity
+        && incoming().reserved_quantity == 0
+        && incoming().created_at == request.time
+        && incoming().updated_at == request.time;
+
+      allow update: if isVerifiedUser() && isValidId(productId) && isValidProduct(incoming(), productId)
+        && incoming().id == existing().id
+        && incoming().owner_id == existing().owner_id
+        && incoming().created_at == existing().created_at
+        && incoming().updated_at == request.time
+        && (
+          // Action: Moderator decision
+          (
+            isModerator()
+            && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'moderation_notes', 'moderated_by', 'moderated_at', 'updated_at'])
+            && incoming().status in ['approved', 'rejected', 'suspended']
+            && incoming().moderated_by == request.auth.uid
+          ) ||
+          // Action: Owner archiving own product
+          (
+            isOwner(existing().owner_id)
+            && existing().status in ['pending', 'approved', 'rejected']
+            && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updated_at'])
+            && incoming().status == 'archived'
+          ) ||
+          // Action: Owner reserving stock when accepting match request
+          (
+            isOwner(existing().owner_id)
+            && existing().status == 'approved'
+            && incoming().diff(existing()).affectedKeys().hasOnly(['available_quantity', 'reserved_quantity', 'status', 'updated_at'])
+            && incoming().status in ['approved', 'reserved']
+            && incoming().available_quantity + incoming().reserved_quantity <= existing().total_quantity
+          ) ||
+          // Action: Exchange participant completing or cancelling reserved stock atomically
+          (
+            incoming().diff(existing()).affectedKeys().hasOnly(['available_quantity', 'reserved_quantity', 'status', 'sync_exchange_id', 'updated_at'])
+            && incoming().status in ['approved', 'reserved', 'completed']
+            && isValidId(incoming().sync_exchange_id)
+            && exists(/databases/$(database)/documents/exchanges/$(incoming().sync_exchange_id))
+            && (
+              get(/databases/$(database)/documents/exchanges/$(incoming().sync_exchange_id)).data.owner_id == request.auth.uid
+              || get(/databases/$(database)/documents/exchanges/$(incoming().sync_exchange_id)).data.requester_id == request.auth.uid
+            )
+            && getAfter(/databases/$(database)/documents/exchanges/$(incoming().sync_exchange_id)).data.status in ['completed', 'cancelled']
+          )
+        );
+      allow delete: if false;
+    }
+
+    match /product_images/{imageId} {
+      allow get: if isValidId(imageId);
+      allow list: if resource.data.sort_order >= 0;
+      allow create: if isVerifiedUser() && isValidId(imageId)
+        && isValidProductImage(incoming(), imageId)
+        && incoming().owner_id == request.auth.uid
+        && existsAfter(/databases/$(database)/documents/products/$(incoming().product_id));
+      allow update: if isVerifiedUser() && isValidId(imageId)
+        && isOwner(existing().owner_id)
+        && isValidProductImage(incoming(), imageId)
+        && incoming().owner_id == existing().owner_id;
+      allow delete: if isVerifiedUser() && isValidId(imageId) && (isOwner(existing().owner_id) || isModerator());
+    }
+
+    // =========================================================================
+    // INTERESTS, MATCH REQUESTS & MATCHES
+    // =========================================================================
+    match /product_interests/{interestId} {
+      allow get: if isSignedIn() && isValidId(interestId) && resource.data.user_id == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.user_id == request.auth.uid;
+      allow create, update: if isVerifiedUser() && isValidId(interestId)
+        && isValidProductInterest(incoming(), interestId)
+        && incoming().user_id == request.auth.uid
+        && incoming().updated_at == request.time
+        && exists(/databases/$(database)/documents/products/$(incoming().product_id));
+      allow delete: if isVerifiedUser() && isValidId(interestId) && resource.data.user_id == request.auth.uid;
+    }
+
+    match /match_requests/{requestId} {
+      allow get: if isSignedIn() && isValidId(requestId)
+        && (resource.data.owner_id == request.auth.uid || resource.data.requester_id == request.auth.uid || isModerator());
+      allow list: if (isSignedIn() && (resource.data.owner_id == request.auth.uid || resource.data.requester_id == request.auth.uid))
+        || isModerator();
+      allow create: if isVerifiedUser() && isValidId(requestId)
+        && isValidMatchRequest(incoming(), requestId)
+        && incoming().requester_id == request.auth.uid
+        && incoming().status == 'pending'
+        && incoming().created_at == request.time
+        && exists(/databases/$(database)/documents/products/$(incoming().target_product_id))
+        && get(/databases/$(database)/documents/products/$(incoming().target_product_id)).data.status == 'approved'
+        && get(/databases/$(database)/documents/products/$(incoming().target_product_id)).data.owner_id == incoming().owner_id;
+      allow update: if isVerifiedUser() && isValidId(requestId)
+        && isValidMatchRequest(incoming(), requestId)
+        && existing().status in ['pending', 'chat_requested']
+        && incoming().id == existing().id
+        && incoming().target_product_id == existing().target_product_id
+        && incoming().requester_id == existing().requester_id
+        && incoming().owner_id == existing().owner_id
+        && incoming().created_at == existing().created_at
+        && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updated_at'])
+        && (
+          (isOwner(existing().owner_id) && incoming().status in ['accepted', 'rejected', 'chat_requested'])
+          || (isOwner(existing().requester_id) && incoming().status == 'cancelled')
+        );
+      allow delete: if false;
+    }
+
+    match /matches/{matchId} {
+      allow get: if isSignedIn() && isValidId(matchId)
+        && (resource.data.owner_id == request.auth.uid || resource.data.requester_id == request.auth.uid || isModerator());
+      allow list: if (isSignedIn() && (resource.data.owner_id == request.auth.uid || resource.data.requester_id == request.auth.uid))
+        || isModerator();
+      allow create: if isVerifiedUser() && isValidId(matchId)
+        && isValidMatch(incoming(), matchId)
+        && incoming().owner_id == request.auth.uid
+        && incoming().status == 'active'
+        && incoming().created_at == request.time
+        && getAfter(/databases/$(database)/documents/match_requests/$(incoming().request_id)).data.status == 'accepted';
+      allow update: if isVerifiedUser() && isValidId(matchId)
+        && isValidMatch(incoming(), matchId)
+        && existing().status == 'active'
+        && (isOwner(existing().owner_id) || isOwner(existing().requester_id) || isModerator())
+        && incoming().id == existing().id
+        && incoming().owner_id == existing().owner_id
+        && incoming().requester_id == existing().requester_id
+        && incoming().created_at == existing().created_at
+        && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updated_at'])
+        && incoming().status in ['completed', 'cancelled', 'disputed'];
+      allow delete: if false;
+    }
+
+    // =========================================================================
+    // PRIVATE CONVERSATIONS & MESSAGES
+    // =========================================================================
+    match /conversations/{conversationId} {
+      allow get: if isSignedIn() && isValidId(conversationId)
+        && (resource.data.participant_a == request.auth.uid || resource.data.participant_b == request.auth.uid || isModerator());
+      allow list: if (isSignedIn() && (resource.data.participant_a == request.auth.uid || resource.data.participant_b == request.auth.uid))
+        || isModerator();
+      allow create: if isVerifiedUser() && isValidId(conversationId)
+        && isValidConversation(incoming(), conversationId)
+        && (incoming().participant_a == request.auth.uid || incoming().participant_b == request.auth.uid)
+        && incoming().is_blocked == false
+        && incoming().created_at == request.time
+        && existsAfter(/databases/$(database)/documents/matches/$(incoming().match_id));
+      allow update: if isVerifiedUser() && isValidId(conversationId)
+        && isValidConversation(incoming(), conversationId)
+        && (isOwner(existing().participant_a) || isOwner(existing().participant_b))
+        && incoming().id == existing().id
+        && incoming().match_id == existing().match_id
+        && incoming().participant_a == existing().participant_a
+        && incoming().participant_b == existing().participant_b
+        && incoming().created_at == existing().created_at
+        && incoming().diff(existing()).affectedKeys().hasOnly(['is_blocked', 'blocked_by', 'updated_at']);
+      allow delete: if false;
+    }
+
+    match /messages/{messageId} {
+      allow get: if isSignedIn() && isValidId(messageId)
+        && (resource.data.participant_a == request.auth.uid || resource.data.participant_b == request.auth.uid || isModerator());
+      allow list: if (isSignedIn() && (resource.data.participant_a == request.auth.uid || resource.data.participant_b == request.auth.uid))
+        || isModerator();
+      allow create: if isVerifiedUser() && isValidId(messageId)
+        && isValidMessage(incoming(), messageId)
+        && incoming().sender_id == request.auth.uid
+        && (incoming().participant_a == request.auth.uid || incoming().participant_b == request.auth.uid)
+        && incoming().is_read == false
+        && incoming().created_at == request.time
+        && exists(/databases/$(database)/documents/conversations/$(incoming().conversation_id))
+        && get(/databases/$(database)/documents/conversations/$(incoming().conversation_id)).data.is_blocked == false
+        && get(/databases/$(database)/documents/conversations/$(incoming().conversation_id)).data.participant_a == incoming().participant_a
+        && get(/databases/$(database)/documents/conversations/$(incoming().conversation_id)).data.participant_b == incoming().participant_b;
+      allow update: if isVerifiedUser() && isValidId(messageId)
+        && isValidMessage(incoming(), messageId)
+        && (isOwner(existing().participant_a) || isOwner(existing().participant_b))
+        && request.auth.uid != existing().sender_id
+        && incoming().id == existing().id
+        && incoming().conversation_id == existing().conversation_id
+        && incoming().participant_a == existing().participant_a
+        && incoming().participant_b == existing().participant_b
+        && incoming().sender_id == existing().sender_id
+        && incoming().body == existing().body
+        && incoming().created_at == existing().created_at
+        && incoming().diff(existing()).affectedKeys().hasOnly(['is_read', 'read_at'])
+        && incoming().is_read == true;
+      allow delete: if false;
+    }
+
+    // =========================================================================
+    // EXCHANGES & BILATERAL CONFIRMATIONS
+    // =========================================================================
+    match /exchanges/{exchangeId} {
+      allow get: if isSignedIn() && isValidId(exchangeId)
+        && (resource.data.owner_id == request.auth.uid || resource.data.requester_id == request.auth.uid || isModerator());
+      allow list: if (isSignedIn() && (resource.data.owner_id == request.auth.uid || resource.data.requester_id == request.auth.uid))
+        || isModerator();
+      allow create: if isVerifiedUser() && isValidId(exchangeId)
+        && isValidExchange(incoming(), exchangeId)
+        && incoming().owner_id == request.auth.uid
+        && incoming().status == 'pending'
+        && incoming().created_at == request.time
+        && existsAfter(/databases/$(database)/documents/matches/$(incoming().match_id));
+      allow update: if isVerifiedUser() && isValidId(exchangeId)
+        && isValidExchange(incoming(), exchangeId)
+        && !(existing().status in ['completed', 'cancelled'])
+        && (isOwner(existing().owner_id) || isOwner(existing().requester_id) || isAdmin())
+        && incoming().id == existing().id
+        && incoming().match_id == existing().match_id
+        && incoming().owner_id == existing().owner_id
+        && incoming().requester_id == existing().requester_id
+        && incoming().created_at == existing().created_at
+        && incoming().updated_at == request.time
+        && (
+          (
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'proposed_by', 'proposed_date', 'proposed_time_slot',
+              'meeting_point_label', 'meeting_point_lat', 'meeting_point_lng', 'status', 'updated_at'
+            ])
+            && incoming().status in ['coordinating', 'delivery_agreed']
+          ) ||
+          (
+            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'completed_at', 'updated_at'])
+            && (
+              incoming().status == 'delivered_pending_confirm'
+              || (
+                incoming().status == 'completed'
+                && existsAfter(/databases/$(database)/documents/exchange_confirmations/$(exchangeId + '_' + existing().owner_id))
+                && existsAfter(/databases/$(database)/documents/exchange_confirmations/$(exchangeId + '_' + existing().requester_id))
+              )
+            )
+          ) ||
+          (
+            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'cancelled_by', 'cancellation_reason', 'updated_at'])
+            && incoming().status in ['cancelled', 'disputed']
+          )
+        );
+      allow delete: if false;
+    }
+
+    match /exchange_confirmations/{confirmationId} {
+      allow get: if isSignedIn() && isValidId(confirmationId)
+        && (resource.data.owner_id == request.auth.uid || resource.data.requester_id == request.auth.uid || isModerator());
+      allow list: if (isSignedIn() && (resource.data.owner_id == request.auth.uid || resource.data.requester_id == request.auth.uid))
+        || isModerator();
+      allow create: if isVerifiedUser() && isValidId(confirmationId)
+        && isValidExchangeConfirmation(incoming(), confirmationId)
+        && incoming().user_id == request.auth.uid
+        && (incoming().owner_id == request.auth.uid || incoming().requester_id == request.auth.uid)
+        && confirmationId == (incoming().exchange_id + '_' + request.auth.uid)
+        && incoming().confirmed_at == request.time
+        && exists(/databases/$(database)/documents/exchanges/$(incoming().exchange_id))
+        && get(/databases/$(database)/documents/exchanges/$(incoming().exchange_id)).data.owner_id == incoming().owner_id
+        && get(/databases/$(database)/documents/exchanges/$(incoming().exchange_id)).data.requester_id == incoming().requester_id;
+      allow update, delete: if false;
+    }
+
+    // =========================================================================
+    // REVIEWS, REPORTS & MODERATION LOGS
+    // =========================================================================
+    match /reviews/{reviewId} {
+      allow get: if isValidId(reviewId);
+      allow list: if resource.data.is_flagged is bool;
+      allow create: if isVerifiedUser() && isValidId(reviewId)
+        && isValidReview(incoming(), reviewId)
+        && incoming().reviewer_id == request.auth.uid
+        && reviewId == (incoming().exchange_id + '_' + request.auth.uid)
+        && incoming().is_flagged == false
+        && incoming().created_at == request.time
+        && exists(/databases/$(database)/documents/exchanges/$(incoming().exchange_id))
+        && get(/databases/$(database)/documents/exchanges/$(incoming().exchange_id)).data.status == 'completed'
+        && (
+          (get(/databases/$(database)/documents/exchanges/$(incoming().exchange_id)).data.owner_id == request.auth.uid
+            && get(/databases/$(database)/documents/exchanges/$(incoming().exchange_id)).data.requester_id == incoming().reviewed_user_id)
+          ||
+          (get(/databases/$(database)/documents/exchanges/$(incoming().exchange_id)).data.requester_id == request.auth.uid
+            && get(/databases/$(database)/documents/exchanges/$(incoming().exchange_id)).data.owner_id == incoming().reviewed_user_id)
+        );
+      allow update: if isModerator() && isValidId(reviewId)
+        && isValidReview(incoming(), reviewId)
+        && incoming().diff(existing()).affectedKeys().hasOnly(['is_flagged']);
+      allow delete: if false;
+    }
+
+    match /reports/{reportId} {
+      allow get: if isSignedIn() && isValidId(reportId)
+        && (resource.data.reporter_id == request.auth.uid || isModerator());
+      allow list: if (isSignedIn() && resource.data.reporter_id == request.auth.uid) || isModerator();
+      allow create: if isVerifiedUser() && isValidId(reportId)
+        && isValidReport(incoming(), reportId)
+        && incoming().reporter_id == request.auth.uid
+        && incoming().status == 'open'
+        && incoming().created_at == request.time;
+      allow update: if isModerator() && isValidId(reportId)
+        && isValidReport(incoming(), reportId)
+        && incoming().reporter_id == existing().reporter_id
+        && incoming().created_at == existing().created_at
+        && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'resolution_notes', 'resolved_by', 'resolved_at', 'updated_at'])
+        && incoming().resolved_by == request.auth.uid;
+      allow delete: if false;
+    }
+
+    match /moderation_logs/{logId} {
+      allow get: if isModerator() && isValidId(logId);
+      allow list: if isModerator();
+      allow create: if isModerator() && isValidId(logId)
+        && isValidModerationLog(incoming(), logId)
+        && incoming().actor_id == request.auth.uid
+        && incoming().created_at == request.time;
+      allow update, delete: if false;
+    }
+
+    // =========================================================================
+    // CIRCULAR TREE, ACHIEVEMENTS, IMPACT, NOTIFICATIONS & EDUCATION
+    // =========================================================================
+    match /user_tree_progress/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if (isSignedIn() && resource.data.user_id == request.auth.uid) || isAdmin();
+      allow create: if isVerifiedUser() && isValidId(userId)
+        && isValidTreeProgress(incoming(), userId)
+        && incoming().updated_at == request.time
+        && (
+          (
+            isOwner(userId)
+            && incoming().completed_operations == 0
+            && incoming().completed_gifts == 0
+            && incoming().completed_exchanges == 0
+            && incoming().current_stage == 'semilla'
+          ) || (
+            incoming().completed_operations == 1
+            && isValidId(incoming().last_exchange_id)
+            && getAfter(/databases/$(database)/documents/exchanges/$(incoming().last_exchange_id)).data.status == 'completed'
+            && (
+              getAfter(/databases/$(database)/documents/exchanges/$(incoming().last_exchange_id)).data.owner_id == userId
+              || getAfter(/databases/$(database)/documents/exchanges/$(incoming().last_exchange_id)).data.requester_id == userId
+            )
+            && existsAfter(/databases/$(database)/documents/exchange_confirmations/$(incoming().last_exchange_id + '_' + userId))
+          )
+        );
+      allow update: if isVerifiedUser() && isValidId(userId)
+        && isValidTreeProgress(incoming(), userId)
+        && incoming().updated_at == request.time
+        && (
+          isAdmin()
+          || (
+            incoming().completed_operations == existing().completed_operations + 1
+            && isValidId(incoming().last_exchange_id)
+            && (!('last_exchange_id' in existing()) || incoming().last_exchange_id != existing().last_exchange_id)
+            && getAfter(/databases/$(database)/documents/exchanges/$(incoming().last_exchange_id)).data.status == 'completed'
+            && (
+              getAfter(/databases/$(database)/documents/exchanges/$(incoming().last_exchange_id)).data.owner_id == userId
+              || getAfter(/databases/$(database)/documents/exchanges/$(incoming().last_exchange_id)).data.requester_id == userId
+            )
+            && existsAfter(/databases/$(database)/documents/exchange_confirmations/$(incoming().last_exchange_id + '_' + userId))
+          )
+        );
+      allow delete: if false;
+    }
+
+    match /user_achievements/{recId} {
+      allow get: if isSignedIn() && isValidId(recId) && (resource.data.user_id == request.auth.uid || isAdmin());
+      allow list: if (isSignedIn() && resource.data.user_id == request.auth.uid) || isAdmin();
+      allow create: if isVerifiedUser() && isValidId(recId)
+        && isValidUserAchievement(incoming(), recId)
+        && recId == (incoming().user_id + '_' + incoming().achievement_id)
+        && incoming().unlocked_at == request.time
+        && exists(/databases/$(database)/documents/achievements/$(incoming().achievement_id))
+        && getAfter(/databases/$(database)/documents/exchanges/$(incoming().exchange_id)).data.status == 'completed'
+        && (
+          getAfter(/databases/$(database)/documents/exchanges/$(incoming().exchange_id)).data.owner_id == incoming().user_id
+          || getAfter(/databases/$(database)/documents/exchanges/$(incoming().exchange_id)).data.requester_id == incoming().user_id
+        );
+      allow update, delete: if false;
+    }
+
+    match /impact_records/{impactId} {
+      allow get: if isValidId(impactId);
+      allow list: if resource.data.quantity >= 1;
+      allow create: if isVerifiedUser() && isValidId(impactId)
+        && isValidImpactRecord(incoming(), impactId)
+        && impactId == incoming().exchange_id
+        && incoming().created_at == request.time
+        && getAfter(/databases/$(database)/documents/exchanges/$(incoming().exchange_id)).data.status == 'completed';
+      allow update, delete: if false;
+    }
+
+    match /notifications/{notificationId} {
+      allow get: if isSignedIn() && isValidId(notificationId) && resource.data.user_id == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.user_id == request.auth.uid;
+      allow create: if isVerifiedUser() && isValidId(notificationId)
+        && isValidNotification(incoming(), notificationId)
+        && incoming().is_read == false
+        && incoming().created_at == request.time;
+      allow update: if isSignedIn() && isValidId(notificationId)
+        && isValidNotification(incoming(), notificationId)
+        && resource.data.user_id == request.auth.uid
+        && incoming().user_id == existing().user_id
+        && incoming().event_type == existing().event_type
+        && incoming().title == existing().title
+        && incoming().body == existing().body
+        && incoming().created_at == existing().created_at
+        && incoming().diff(existing()).affectedKeys().hasOnly(['is_read', 'read_at'])
+        && incoming().is_read == true;
+      allow delete: if false;
+    }
+
+    match /education_progress/{progressId} {
+      allow get: if isSignedIn() && isValidId(progressId) && resource.data.user_id == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.user_id == request.auth.uid;
+      allow create, update: if isVerifiedUser() && isValidId(progressId)
+        && isValidEducationProgress(incoming(), progressId)
+        && incoming().user_id == request.auth.uid
+        && progressId == (request.auth.uid + '_' + incoming().module_slug)
+        && incoming().completed_at == request.time;
+      allow delete: if false;
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "PoliCircular",
+  "description": "Plataforma comunitaria y educativa de economía circular en Chiloé y Chile para regalar, intercambiar y reutilizar productos sin utilizar dinero.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <rect width="512" height="512" fill="#102C49"/>
+  <!-- Safe-zone scaled (approx 72% centered) for Android maskable cropping -->
+  <g transform="translate(72, 72) scale(0.72)">
+    <path d="M256 88C163.216 88 88 163.216 88 256C88 286.6 96.18 315.3 110.48 340" stroke="#FFFFFF" stroke-width="30" stroke-linecap="round"/>
+    <path d="M86 306L112 344L150 318" stroke="#FFFFFF" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M256 424C348.784 424 424 348.784 424 256C424 225.4 415.82 196.7 401.52 172" stroke="#F28C28" stroke-width="30" stroke-linecap="round"/>
+    <path d="M426 206L400 168L362 194" stroke="#F28C28" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M256 346V214" stroke="#FFFFFF" stroke-width="24" stroke-linecap="round"/>
+    <path d="M256 266C256 218 294 184 342 184C342 232 304 266 256 266Z" fill="#52B788"/>
+    <path d="M256 292C256 250 224 220 182 220C182 262 214 292 256 292Z" fill="#F28C28"/>
+  </g>
+</svg>
